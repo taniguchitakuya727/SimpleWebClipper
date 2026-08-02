@@ -14,6 +14,7 @@ const sheetsEndpointStorageKey = "simple-web-clipper.sheets-endpoint";
 const defaultSheetsEndpoint = "https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec";
 elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || defaultSheetsEndpoint;
 let lastSentUrl = "";
+let triedStartupClipboard = false;
 
 function setStatus(message) {
   elements.status.textContent = message;
@@ -208,6 +209,22 @@ function focusUrlInput() {
   setStatus("URL欄に貼り付けてください。貼り付けると自動でMarkdownを作成します。");
 }
 
+async function importClipboardOnStartup() {
+  if (triedStartupClipboard || !navigator.clipboard?.readText) return;
+  triedStartupClipboard = true;
+
+  try {
+    const text = await navigator.clipboard.readText();
+    const url = normalizeUrl(text);
+    elements.url.value = url;
+    elements.title.value = "";
+    elements.author.value = "";
+    await prepareClipFromUrl({ auto: true });
+  } catch {
+    setStatus("クリップボード自動読込はブロックされました。URL欄に貼り付けてください。");
+  }
+}
+
 elements.url.addEventListener("paste", () => {
   elements.title.value = "";
   elements.author.value = "";
@@ -224,3 +241,4 @@ elements.sendSheets.addEventListener("click", sendToSheets);
 elements.sheetsEndpoint.addEventListener("input", () => {
   localStorage.setItem(sheetsEndpointStorageKey, elements.sheetsEndpoint.value.trim());
 });
+window.addEventListener("load", importClipboardOnStartup);
