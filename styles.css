@@ -1,0 +1,144 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f7f5;
+  --panel: #ffffff;
+  --ink: #202322;
+  --muted: #68716d;
+  --line: #d7ddd8;
+  --accent: #1f766d;
+  --accent-dark: #15534d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app-shell {
+  width: min(760px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+.clipper {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.header {
+  display: grid;
+  gap: 6px;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.65rem;
+  line-height: 1.2;
+}
+
+p,
+.status {
+  color: var(--muted);
+}
+
+label {
+  display: grid;
+  gap: 7px;
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfb;
+  color: var(--ink);
+  padding: 11px 12px;
+  outline: none;
+}
+
+input {
+  min-height: 46px;
+}
+
+textarea {
+  min-height: 160px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(31, 118, 109, 0.14);
+}
+
+.mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+button {
+  min-height: 44px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  padding: 0 16px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+button:hover {
+  background: var(--accent-dark);
+}
+
+.status {
+  min-height: 22px;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    width: min(100% - 20px, 760px);
+    padding-top: 16px;
+  }
+
+  .clipper {
+    padding: 16px;
+  }
+
+  .mini-grid {
+    grid-template-columns: 1fr;
+  }
+}

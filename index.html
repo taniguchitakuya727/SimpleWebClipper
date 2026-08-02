@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple Web Clipper</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="clipper">
+        <header class="header">
+          <h1>Simple Web Clipper</h1>
+          <p>URLを貼るだけでObsidian用Markdownを書き出します。</p>
+        </header>
+
+        <label>
+          URL
+          <input id="urlInput" type="url" placeholder="https://example.com/article" autofocus />
+        </label>
+
+        <div class="mini-grid">
+          <label>
+            タイトル
+            <input id="titleInput" type="text" placeholder="空ならURLから自動作成" />
+          </label>
+          <label>
+            著者
+            <input id="authorInput" type="text" placeholder="@account / 名前" />
+          </label>
+        </div>
+
+        <label>
+          本文
+          <textarea id="contentInput" rows="8" placeholder="本文を入れたい場合だけ貼り付け"></textarea>
+        </label>
+
+        <label>
+          Google Apps Script URL
+          <input id="sheetsEndpointInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
+        </label>
+
+        <div class="actions">
+          <button id="pasteHelpButton" type="button">URL欄に貼り付け</button>
+          <button id="downloadButton" type="button">Markdown作成</button>
+          <button id="sendSheetsButton" type="button">Sheetsへ送信</button>
+        </div>
+
+        <p id="statusText" class="status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
