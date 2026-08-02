@@ -13,6 +13,7 @@ const elements = {
 const sheetsEndpointStorageKey = "simple-web-clipper.sheets-endpoint";
 const defaultSheetsEndpoint = "https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec";
 elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || defaultSheetsEndpoint;
+let lastSentUrl = "";
 
 function setStatus(message) {
   elements.status.textContent = message;
@@ -141,7 +142,12 @@ async function createMarkdown({ auto = false } = {}) {
 async function prepareClipFromUrl({ auto = false } = {}) {
   const clip = await getClipFromForm(auto);
   if (!clip) return;
-  setStatus("URL情報を取得しました。必要ならSheetsへ送信できます。");
+  if (clip.url === lastSentUrl) {
+    setStatus("このURLは送信済みです。");
+    return;
+  }
+
+  await sendClipToSheets(clip);
 }
 
 async function getClipFromForm(auto = false) {
@@ -165,14 +171,17 @@ async function getClipFromForm(auto = false) {
 }
 
 async function sendToSheets() {
+  const clip = await getClipFromForm();
+  if (!clip) return;
+  await sendClipToSheets(clip);
+}
+
+async function sendClipToSheets(clip) {
   const endpoint = elements.sheetsEndpoint.value.trim();
   if (!endpoint) {
     setStatus("Google Apps Script URLを入力してください。");
     return;
   }
-
-  const clip = await getClipFromForm();
-  if (!clip) return;
 
   setStatus("Sheetsへ送信しています...");
   try {
@@ -186,6 +195,7 @@ async function sendToSheets() {
     });
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || "send failed");
+    lastSentUrl = clip.url;
     setStatus("Sheetsへ送信しました。");
   } catch {
     setStatus("Sheetsへ送信できませんでした。Apps Script URLを確認してください。");
