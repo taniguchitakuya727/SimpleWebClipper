@@ -27,3 +27,9 @@ http://<MacのIP>:4173/
 3. Webアプリとしてデプロイします。
 4. 発行された`https://script.google.com/macros/s/.../exec`を画面の`Google Apps Script URL`へ貼ります。
 5. `Sheetsへ送信`で行が追加されます。
+
+現在のデフォルトURL:
+
+```txt
+https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec
+```

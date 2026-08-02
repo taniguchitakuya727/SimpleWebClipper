@@ -1,8 +1,8 @@
 const SHEET_NAME = "clips";
 
 function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  if (!sheet) throw new Error(`Sheet not found: ${SHEET_NAME}`);
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
 
   const clip = JSON.parse(e.postData.contents);
   ensureHeader(sheet);

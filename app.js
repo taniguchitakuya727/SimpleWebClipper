@@ -11,8 +11,9 @@ const elements = {
 };
 
 const sheetsEndpointStorageKey = "simple-web-clipper.sheets-endpoint";
+const defaultSheetsEndpoint = "https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec";
 let lastDownloadedUrl = "";
-elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || "";
+elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || defaultSheetsEndpoint;
 
 function setStatus(message) {
   elements.status.textContent = message;
