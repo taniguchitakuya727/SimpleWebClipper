@@ -4,15 +4,20 @@ const elements = {
   author: document.querySelector("#authorInput"),
   content: document.querySelector("#contentInput"),
   sheetsEndpoint: document.querySelector("#sheetsEndpointInput"),
+  sheetUrl: document.querySelector("#sheetUrlInput"),
   pasteHelp: document.querySelector("#pasteHelpButton"),
   download: document.querySelector("#downloadButton"),
   sendSheets: document.querySelector("#sendSheetsButton"),
+  openSheet: document.querySelector("#openSheetButton"),
   status: document.querySelector("#statusText"),
 };
 
 const sheetsEndpointStorageKey = "simple-web-clipper.sheets-endpoint";
+const sheetUrlStorageKey = "simple-web-clipper.sheet-url";
 const defaultSheetsEndpoint = "https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec";
+const defaultSheetUrl = "https://docs.google.com/spreadsheets/d/1LgYhNoS5fJ8GjvSPTbpScQ05P0QKMBwJLsdPtklobUA/edit?gid=1315881697#gid=1315881697";
 elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || defaultSheetsEndpoint;
+elements.sheetUrl.value = localStorage.getItem(sheetUrlStorageKey) || defaultSheetUrl;
 let lastSentUrl = "";
 let triedStartupClipboard = false;
 
@@ -209,6 +214,16 @@ function focusUrlInput() {
   setStatus("URL欄に貼り付けてください。貼り付けると自動でMarkdownを作成します。");
 }
 
+function openSheet() {
+  const url = elements.sheetUrl.value.trim();
+  if (!url) {
+    setStatus("Google Sheet URLを入力してください。");
+    return;
+  }
+
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 async function importClipboardOnStartup() {
   if (triedStartupClipboard || !navigator.clipboard?.readText) return;
   triedStartupClipboard = true;
@@ -238,7 +253,11 @@ elements.url.addEventListener("change", () => {
 elements.download.addEventListener("click", () => createMarkdown());
 elements.pasteHelp.addEventListener("click", focusUrlInput);
 elements.sendSheets.addEventListener("click", sendToSheets);
+elements.openSheet.addEventListener("click", openSheet);
 elements.sheetsEndpoint.addEventListener("input", () => {
   localStorage.setItem(sheetsEndpointStorageKey, elements.sheetsEndpoint.value.trim());
+});
+elements.sheetUrl.addEventListener("input", () => {
+  localStorage.setItem(sheetUrlStorageKey, elements.sheetUrl.value.trim());
 });
 window.addEventListener("load", importClipboardOnStartup);

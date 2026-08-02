@@ -40,10 +40,16 @@
           <input id="sheetsEndpointInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
         </label>
 
+        <label>
+          Google Sheet URL
+          <input id="sheetUrlInput" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." />
+        </label>
+
         <div class="actions">
           <button id="pasteHelpButton" type="button">URL欄に貼り付け</button>
           <button id="downloadButton" type="button">Markdown作成</button>
           <button id="sendSheetsButton" type="button">Sheetsへ送信</button>
+          <button id="openSheetButton" type="button">シートを開く</button>
         </div>
 
         <p id="statusText" class="status" role="status" aria-live="polite"></p>
