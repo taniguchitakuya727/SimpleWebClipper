@@ -12,7 +12,6 @@ const elements = {
 
 const sheetsEndpointStorageKey = "simple-web-clipper.sheets-endpoint";
 const defaultSheetsEndpoint = "https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec";
-let lastDownloadedUrl = "";
 elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || defaultSheetsEndpoint;
 
 function setStatus(message) {
@@ -132,13 +131,17 @@ async function createMarkdown({ auto = false } = {}) {
   const clip = await getClipFromForm(auto);
   if (!clip) return;
   const { url, title, author, content } = clip;
-  if (auto && url === lastDownloadedUrl) return;
 
   const markdown = buildMarkdown({ url, title, author, content });
 
   downloadText(`${safeFilename(title)}.md`, markdown);
-  lastDownloadedUrl = url;
   setStatus("Markdownを作成しました。");
+}
+
+async function prepareClipFromUrl({ auto = false } = {}) {
+  const clip = await getClipFromForm(auto);
+  if (!clip) return;
+  setStatus("URL情報を取得しました。必要ならSheetsへ送信できます。");
 }
 
 async function getClipFromForm(auto = false) {
@@ -198,12 +201,12 @@ function focusUrlInput() {
 elements.url.addEventListener("paste", () => {
   elements.title.value = "";
   elements.author.value = "";
-  window.setTimeout(() => createMarkdown({ auto: true }), 0);
+  window.setTimeout(() => prepareClipFromUrl({ auto: true }), 0);
 });
 elements.url.addEventListener("change", () => {
   elements.title.value = "";
   elements.author.value = "";
-  createMarkdown({ auto: true });
+  prepareClipFromUrl({ auto: true });
 });
 elements.download.addEventListener("click", () => createMarkdown());
 elements.pasteHelp.addEventListener("click", focusUrlInput);
