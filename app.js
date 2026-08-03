@@ -240,6 +240,25 @@ async function importClipboardOnStartup() {
   }
 }
 
+async function importUrlFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const rawUrl = params.get("url");
+  if (!rawUrl) return false;
+
+  try {
+    const url = normalizeUrl(rawUrl);
+    elements.url.value = url;
+    elements.title.value = "";
+    elements.author.value = "";
+    await prepareClipFromUrl({ auto: true });
+    window.history.replaceState({}, "", window.location.pathname);
+    return true;
+  } catch {
+    setStatus("ショートカットから渡されたURLを読み取れませんでした。");
+    return false;
+  }
+}
+
 elements.url.addEventListener("paste", () => {
   elements.title.value = "";
   elements.author.value = "";
@@ -260,4 +279,7 @@ elements.sheetsEndpoint.addEventListener("input", () => {
 elements.sheetUrl.addEventListener("input", () => {
   localStorage.setItem(sheetUrlStorageKey, elements.sheetUrl.value.trim());
 });
-window.addEventListener("load", importClipboardOnStartup);
+window.addEventListener("load", async () => {
+  const imported = await importUrlFromQuery();
+  if (!imported) await importClipboardOnStartup();
+});
