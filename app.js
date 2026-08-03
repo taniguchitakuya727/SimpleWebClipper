@@ -20,7 +20,6 @@ elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) |
 elements.sheetUrl.value = localStorage.getItem(sheetUrlStorageKey) || defaultSheetUrl;
 let lastSentUrl = "";
 let triedStartupClipboard = false;
-let pageMetadata = { published: "", description: "" };
 
 function setStatus(message) {
   elements.status.textContent = message;
@@ -90,16 +89,16 @@ function buildMarkdown({ url, title, author, content, published = "", descriptio
   return `${frontmatter.join("\n")}\n${content.trim() ? `${content.trim()}\n` : ""}`;
 }
 
-function buildClipPayload({ url, title, author, content, published = "", description = "" }) {
+function buildClipPayload({ url, title, author, content }) {
   const created = new Date().toISOString().slice(0, 10);
   return {
     title,
     source: url,
     url,
     author,
-    published,
+    published: "",
     created,
-    description,
+    description: "",
     tags: "clippings",
     content,
   };
@@ -115,31 +114,11 @@ function downloadText(filename, content) {
   URL.revokeObjectURL(objectUrl);
 }
 
-async function fetchPageMetadata(url) {
-  try {
-    const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}&t=${Date.now()}`, { cache: "no-store" });
-    const data = await response.json();
-    return {
-      title: data.title || "",
-      published: data.published || "",
-      description: data.description || "",
-    };
-  } catch {
-    return { title: "", published: "", description: "" };
-  }
-}
-
 async function fillDerivedFields(url) {
-  if (!elements.title.value.trim() || !pageMetadata.published || !pageMetadata.description) {
-    setStatus("ページ情報を取得しています...");
-    const metadata = await fetchPageMetadata(url);
-    pageMetadata = {
-      published: metadata.published,
-      description: metadata.description,
-    };
-    const title = metadata.title || deriveTitle(url);
+  if (!elements.title.value.trim()) {
+    const title = deriveTitle(url);
     elements.title.value = title;
-    setStatus(`取得: ${title}`);
+    setStatus(`URLを受け取りました: ${title}`);
   }
   if (!elements.author.value.trim()) elements.author.value = inferAuthor(url);
 }
@@ -183,8 +162,6 @@ async function getClipFromForm(auto = false) {
     title: elements.title.value.trim() || deriveTitle(url),
     author: elements.author.value.trim(),
     content: elements.content.value.trim(),
-    published: pageMetadata.published,
-    description: pageMetadata.description,
   };
 }
 
@@ -203,16 +180,14 @@ async function sendClipToSheets(clip) {
 
   setStatus("Sheetsへ送信しています...");
   try {
-    const response = await fetch("/api/sheets", {
+    await fetch(endpoint, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      mode: "no-cors",
+      headers: { "content-type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
-        endpoint,
         clip: buildClipPayload(clip),
       }),
     });
-    const result = await response.json();
-    if (!response.ok || !result.ok) throw new Error(result.error || "send failed");
     lastSentUrl = clip.url;
     setStatus("Sheetsへ送信しました。");
   } catch {
@@ -246,7 +221,6 @@ async function importClipboardOnStartup() {
     elements.url.value = url;
     elements.title.value = "";
     elements.author.value = "";
-    pageMetadata = { published: "", description: "" };
     await prepareClipFromUrl({ auto: true });
   } catch {
     setStatus("クリップボード自動読込はブロックされました。URL欄に貼り付けてください。");
@@ -264,7 +238,6 @@ async function importUrlFromQuery() {
     elements.url.value = url;
     elements.title.value = "";
     elements.author.value = "";
-    pageMetadata = { published: "", description: "" };
     await prepareClipFromUrl({ auto: true });
     window.history.replaceState({}, "", window.location.pathname);
     return true;
@@ -277,13 +250,11 @@ async function importUrlFromQuery() {
 elements.url.addEventListener("paste", () => {
   elements.title.value = "";
   elements.author.value = "";
-  pageMetadata = { published: "", description: "" };
   window.setTimeout(() => prepareClipFromUrl({ auto: true }), 0);
 });
 elements.url.addEventListener("change", () => {
   elements.title.value = "";
   elements.author.value = "";
-  pageMetadata = { published: "", description: "" };
   prepareClipFromUrl({ auto: true });
 });
 elements.download.addEventListener("click", () => createMarkdown());

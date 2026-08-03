@@ -1,8 +1,8 @@
 # Simple Web Clipper
 
-URLを貼るだけでObsidian向けMarkdownを作成する小さなローカルWEBクリッパーです。
+URLを貼るだけでGoogle Sheetsへ記録できる小さなWEBクリッパーです。GitHub Pagesで静的ホストできます。
 
-## 起動
+## ローカル起動
 
 ```bash
 node server.js
@@ -20,7 +20,22 @@ http://localhost:4173/
 http://<MacのIP>:4173/
 ```
 
-## 外部から使う
+## GitHub Pagesで使う
+
+GitHub Pagesでは`index.html`、`styles.css`、`app.js`だけで動きます。タイトル、公開日、説明文の取得とSheets更新はGoogle Apps Script側で行います。
+
+1. GitHubへこのリポジトリをpushします。
+2. Repository Settings > Pagesで`main`ブランチを公開します。
+3. 発行されたURLを開きます。
+4. iPhoneショートカットでは以下の形式にします。
+
+```txt
+https://<username>.github.io/<repo>/?url=
+```
+
+末尾に共有URLを付けます。
+
+## Cloudflare Tunnelで使う
 
 Wi-Fiに依存せず使う場合は、パスワード認証付きで起動してからCloudflare Tunnelを使います。
 
@@ -64,7 +79,7 @@ cloudflared tunnel run --url http://localhost:4173 simple-web-clipper
 5. `Sheetsへ送信`で行が追加されます。同じ`source` URLが既にある場合は既存行を更新します。
 6. スプレッドシート本体のURLを`Google Sheet URL`に入れると、`シートを開く`ボタンから確認できます。
 
-タイトル、公開日、説明文はページのHTMLメタデータから自動取得します。
+タイトル、公開日、説明文はApps Script側でページのHTMLメタデータから自動取得します。
 
 現在のデフォルトURL:
 
