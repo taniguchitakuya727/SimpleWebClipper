@@ -4,6 +4,7 @@ const path = require("path");
 
 const port = Number(process.env.PORT || 4173);
 const root = __dirname;
+const clipperPassword = process.env.CLIPPER_PASSWORD || "";
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -13,6 +14,25 @@ const types = {
 function send(response, status, body, type = "text/plain; charset=utf-8", headers = {}) {
   response.writeHead(status, { "content-type": type, ...headers });
   response.end(body);
+}
+
+function isAuthorized(request) {
+  if (!clipperPassword) return true;
+
+  const authorization = request.headers.authorization || "";
+  const [scheme, encoded] = authorization.split(" ");
+  if (scheme !== "Basic" || !encoded) return false;
+
+  const decoded = Buffer.from(encoded, "base64").toString("utf8");
+  const password = decoded.split(":").slice(1).join(":");
+  return password === clipperPassword;
+}
+
+function requireAuth(response) {
+  send(response, 401, "Authentication required", "text/plain; charset=utf-8", {
+    "www-authenticate": 'Basic realm="Simple Web Clipper"',
+    "cache-control": "no-store",
+  });
 }
 
 function decodeHtml(value) {
@@ -181,6 +201,11 @@ function handleStatic(request, response) {
 
 http
   .createServer((request, response) => {
+    if (!isAuthorized(request)) {
+      requireAuth(response);
+      return;
+    }
+
     if (request.url.startsWith("/api/title")) {
       handleTitle(request, response);
       return;
@@ -194,4 +219,5 @@ http
   })
   .listen(port, "0.0.0.0", () => {
     console.log(`Simple Web Clipper: http://localhost:${port}/`);
+    if (clipperPassword) console.log("Basic auth: enabled");
   });

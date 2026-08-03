@@ -20,6 +20,22 @@ http://localhost:4173/
 http://<MacのIP>:4173/
 ```
 
+## 外部から使う
+
+Wi-Fiに依存せず使う場合は、パスワード認証付きで起動してからCloudflare Tunnelを使います。
+
+```bash
+CLIPPER_PASSWORD='任意のパスワード' node server.js
+```
+
+別ターミナルで公開URLを作ります。
+
+```bash
+cloudflared tunnel --url http://localhost:4173
+```
+
+表示された`https://...trycloudflare.com`をiPhoneなどから開きます。ユーザー名は任意、パスワードは`CLIPPER_PASSWORD`に指定した値です。
+
 ## Google Sheets連携
 
 1. Googleスプレッドシートを作成します。
