@@ -20,6 +20,7 @@ elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) |
 elements.sheetUrl.value = localStorage.getItem(sheetUrlStorageKey) || defaultSheetUrl;
 let lastSentUrl = "";
 let triedStartupClipboard = false;
+let pageMetadata = { published: "", description: "" };
 
 function setStatus(message) {
   elements.status.textContent = message;
@@ -70,7 +71,7 @@ function authorYaml(author) {
     .join("\n");
 }
 
-function buildMarkdown({ url, title, author, content }) {
+function buildMarkdown({ url, title, author, content, published = "", description = "" }) {
   const today = new Date().toISOString().slice(0, 10);
   const frontmatter = [
     "---",
@@ -78,9 +79,9 @@ function buildMarkdown({ url, title, author, content }) {
     `source: ${yamlQuote(url)}`,
     "author:",
     authorYaml(author),
-    "published:",
+    `published: ${published}`,
     `created: ${today}`,
-    "description:",
+    `description: ${description ? yamlQuote(description) : ""}`,
     "tags:",
     '  - "clippings"',
     "---",
@@ -89,16 +90,16 @@ function buildMarkdown({ url, title, author, content }) {
   return `${frontmatter.join("\n")}\n${content.trim() ? `${content.trim()}\n` : ""}`;
 }
 
-function buildClipPayload({ url, title, author, content }) {
+function buildClipPayload({ url, title, author, content, published = "", description = "" }) {
   const created = new Date().toISOString().slice(0, 10);
   return {
     title,
     source: url,
     url,
     author,
-    published: "",
+    published,
     created,
-    description: "",
+    description,
     tags: "clippings",
     content,
   };
@@ -114,22 +115,31 @@ function downloadText(filename, content) {
   URL.revokeObjectURL(objectUrl);
 }
 
-async function fetchPageTitle(url) {
+async function fetchPageMetadata(url) {
   try {
-    const response = await fetch(`/api/title?url=${encodeURIComponent(url)}&t=${Date.now()}`, { cache: "no-store" });
+    const response = await fetch(`/api/metadata?url=${encodeURIComponent(url)}&t=${Date.now()}`, { cache: "no-store" });
     const data = await response.json();
-    return data.title || "";
+    return {
+      title: data.title || "",
+      published: data.published || "",
+      description: data.description || "",
+    };
   } catch {
-    return "";
+    return { title: "", published: "", description: "" };
   }
 }
 
 async function fillDerivedFields(url) {
-  if (!elements.title.value.trim()) {
-    setStatus("ページタイトルを取得しています...");
-    const title = (await fetchPageTitle(url)) || deriveTitle(url);
+  if (!elements.title.value.trim() || !pageMetadata.published || !pageMetadata.description) {
+    setStatus("ページ情報を取得しています...");
+    const metadata = await fetchPageMetadata(url);
+    pageMetadata = {
+      published: metadata.published,
+      description: metadata.description,
+    };
+    const title = metadata.title || deriveTitle(url);
     elements.title.value = title;
-    setStatus(`取得タイトル: ${title}`);
+    setStatus(`取得: ${title}`);
   }
   if (!elements.author.value.trim()) elements.author.value = inferAuthor(url);
 }
@@ -139,7 +149,7 @@ async function createMarkdown({ auto = false } = {}) {
   if (!clip) return;
   const { url, title, author, content } = clip;
 
-  const markdown = buildMarkdown({ url, title, author, content });
+  const markdown = buildMarkdown(clip);
 
   downloadText(`${safeFilename(title)}.md`, markdown);
   setStatus("Markdownを作成しました。");
@@ -173,6 +183,8 @@ async function getClipFromForm(auto = false) {
     title: elements.title.value.trim() || deriveTitle(url),
     author: elements.author.value.trim(),
     content: elements.content.value.trim(),
+    published: pageMetadata.published,
+    description: pageMetadata.description,
   };
 }
 
@@ -234,6 +246,7 @@ async function importClipboardOnStartup() {
     elements.url.value = url;
     elements.title.value = "";
     elements.author.value = "";
+    pageMetadata = { published: "", description: "" };
     await prepareClipFromUrl({ auto: true });
   } catch {
     setStatus("クリップボード自動読込はブロックされました。URL欄に貼り付けてください。");
@@ -251,6 +264,7 @@ async function importUrlFromQuery() {
     elements.url.value = url;
     elements.title.value = "";
     elements.author.value = "";
+    pageMetadata = { published: "", description: "" };
     await prepareClipFromUrl({ auto: true });
     window.history.replaceState({}, "", window.location.pathname);
     return true;
@@ -263,11 +277,13 @@ async function importUrlFromQuery() {
 elements.url.addEventListener("paste", () => {
   elements.title.value = "";
   elements.author.value = "";
+  pageMetadata = { published: "", description: "" };
   window.setTimeout(() => prepareClipFromUrl({ auto: true }), 0);
 });
 elements.url.addEventListener("change", () => {
   elements.title.value = "";
   elements.author.value = "";
+  pageMetadata = { published: "", description: "" };
   prepareClipFromUrl({ auto: true });
 });
 elements.download.addEventListener("click", () => createMarkdown());

@@ -4,6 +4,7 @@ const path = require("path");
 
 const port = Number(process.env.PORT || 4173);
 const root = __dirname;
+loadEnvFile();
 const clipperPassword = process.env.CLIPPER_PASSWORD || "";
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -35,6 +36,17 @@ function requireAuth(response) {
   });
 }
 
+function loadEnvFile() {
+  const envPath = path.join(root, ".env");
+  if (!fs.existsSync(envPath)) return;
+
+  for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
+    const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (!match || process.env[match[1]]) continue;
+    process.env[match[1]] = match[2].replace(/^["']|["']$/g, "");
+  }
+}
+
 function decodeHtml(value) {
   return value
     .replace(/&amp;/g, "&")
@@ -47,7 +59,7 @@ function decodeHtml(value) {
 }
 
 function getAttribute(tag, name) {
-  const pattern = new RegExp(`${name}\\\\s*=\\\\s*([\"'])(.*?)\\\\1`, "i");
+  const pattern = new RegExp(`${name}\\s*=\\s*(["'])(.*?)\\1`, "i");
   return tag.match(pattern)?.[2] || "";
 }
 
@@ -88,6 +100,46 @@ function pickTitle(html) {
   return decodeHtml(stripTags(metaTitle || title?.[1] || h1?.[1] || "").replace(/\s+/g, " ").trim());
 }
 
+function pickDescription(html) {
+  const description = getMetaContent(html, ["description", "og:description", "twitter:description"]);
+  return decodeHtml(stripTags(description).replace(/\s+/g, " ").trim());
+}
+
+function normalizeDate(value) {
+  if (!value) return "";
+  const normalized = decodeHtml(stripTags(value)).replace(/\s+/g, " ").trim();
+  const slashDate = normalized.match(/(20\d{2})[/-](\d{1,2})[/-](\d{1,2})/);
+  if (slashDate) return `${slashDate[1]}-${slashDate[2].padStart(2, "0")}-${slashDate[3].padStart(2, "0")}`;
+
+  const parsed = new Date(normalized);
+  if (!Number.isNaN(parsed.valueOf())) return parsed.toISOString().slice(0, 10);
+  return normalized;
+}
+
+function pickPublished(html) {
+  const metaDate = getMetaContent(html, [
+    "article:published_time",
+    "datepublished",
+    "date",
+    "dc.date",
+    "dc.date.issued",
+    "pubdate",
+    "publishdate",
+    "published",
+  ]);
+  const time = html.match(/<time[^>]+datetime=["']([^"']+)["'][^>]*>/i)?.[1];
+  const billboardTime = html.match(/<p[^>]+class=["'][^"']*\btime\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1];
+  return normalizeDate(metaDate || time || billboardTime);
+}
+
+function pickMetadata(html) {
+  return {
+    title: pickTitle(html),
+    published: pickPublished(html),
+    description: pickDescription(html),
+  };
+}
+
 function detectEncoding(headers, bytes) {
   const contentType = headers.get("content-type") || "";
   const headerCharset = contentType.match(/charset=([^;\s]+)/i)?.[1];
@@ -106,7 +158,7 @@ function decodePage(headers, bytes) {
   }
 }
 
-async function handleTitle(request, response) {
+async function handleMetadata(request, response) {
   const requestUrl = new URL(request.url, `http://${request.headers.host}`);
   const target = requestUrl.searchParams.get("url");
 
@@ -127,9 +179,9 @@ async function handleTitle(request, response) {
     });
     const bytes = new Uint8Array(await page.arrayBuffer());
     const html = decodePage(page.headers, bytes);
-    send(response, 200, JSON.stringify({ title: pickTitle(html) }), "application/json; charset=utf-8", { "cache-control": "no-store" });
+    send(response, 200, JSON.stringify(pickMetadata(html)), "application/json; charset=utf-8", { "cache-control": "no-store" });
   } catch (error) {
-    send(response, 200, JSON.stringify({ title: "" }), "application/json; charset=utf-8", { "cache-control": "no-store" });
+    send(response, 200, JSON.stringify({ title: "", published: "", description: "" }), "application/json; charset=utf-8", { "cache-control": "no-store" });
   }
 }
 
@@ -215,8 +267,8 @@ http
       return;
     }
 
-    if (request.url.startsWith("/api/title")) {
-      handleTitle(request, response);
+    if (request.url.startsWith("/api/title") || request.url.startsWith("/api/metadata")) {
+      handleMetadata(request, response);
       return;
     }
     if (request.url.startsWith("/api/sheets")) {
