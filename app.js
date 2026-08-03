@@ -242,7 +242,8 @@ async function importClipboardOnStartup() {
 
 async function importUrlFromQuery() {
   const params = new URLSearchParams(window.location.search);
-  const rawUrl = params.get("url");
+  const pathValue = decodeURIComponent(window.location.pathname.slice(1));
+  const rawUrl = params.get("url") || (pathValue.startsWith("http") ? pathValue : "");
   if (!rawUrl) return false;
 
   try {

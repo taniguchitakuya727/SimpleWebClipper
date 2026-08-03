@@ -191,6 +191,15 @@ function handleStatic(request, response) {
 
   fs.readFile(filePath, (error, data) => {
     if (error) {
+      const extension = path.extname(filePath);
+      if (["GET", "HEAD"].includes(request.method) && !types[extension]) {
+        fs.readFile(path.join(root, "index.html"), (indexError, indexData) => {
+          if (indexError) send(response, 404, "Not found");
+          else send(response, 200, indexData, types[".html"], { "cache-control": "no-store" });
+        });
+        return;
+      }
+
       send(response, 404, "Not found");
       return;
     }
