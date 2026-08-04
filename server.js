@@ -207,6 +207,12 @@ async function handleMetadata(request, response) {
     const parsed = new URL(target);
     if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
 
+    const wwdMetadata = await fetchWwdMetadata(parsed.toString());
+    if (wwdMetadata.title) {
+      send(response, 200, JSON.stringify(wwdMetadata), "application/json; charset=utf-8", { "cache-control": "no-store" });
+      return;
+    }
+
     const page = await fetch(parsed.toString(), {
       headers: {
         "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
@@ -218,6 +224,28 @@ async function handleMetadata(request, response) {
     send(response, 200, JSON.stringify(pickMetadata(html)), "application/json; charset=utf-8", { "cache-control": "no-store" });
   } catch (error) {
     send(response, 200, JSON.stringify({ title: "", published: "", description: "" }), "application/json; charset=utf-8", { "cache-control": "no-store" });
+  }
+}
+
+async function fetchWwdMetadata(url) {
+  const match = url.match(/^https?:\/\/(?:www\.)?wwdjapan\.com\/articles\/(\d+)/i);
+  if (!match) return {};
+
+  try {
+    const api = await fetch(`https://www.wwdjapan.com/wp-json/wp/v2/posts/${match[1]}?_fields=title,date,excerpt`, {
+      headers: {
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+        accept: "application/json,text/html",
+      },
+    });
+    const data = await api.json();
+    return {
+      title: cleanTitle(decodeHtml(stripTags(data.title?.rendered || "").replace(/\s+/g, " ").trim())),
+      published: normalizeDate(data.date || ""),
+      description: decodeHtml(stripTags(data.excerpt?.rendered || "").replace(/\s+/g, " ").trim()),
+    };
+  } catch {
+    return {};
   }
 }
 

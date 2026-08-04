@@ -1,5 +1,14 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "author", "published", "created", "description", "tags", "content"];
+const SCRIPT_VERSION = "2026-08-04-wwd-api";
+
+function doGet(e) {
+  const url = e && e.parameter && e.parameter.url;
+  const output = url
+    ? { ok: true, version: SCRIPT_VERSION, metadata: fetchMetadata(url) }
+    : { ok: true, version: SCRIPT_VERSION };
+  return ContentService.createTextOutput(JSON.stringify(output)).setMimeType(ContentService.MimeType.JSON);
+}
 
 function doPost(e) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -59,6 +68,9 @@ function findRowBySource(sheet, source) {
 
 function fetchMetadata(url) {
   try {
+    const wwdMetadata = fetchWwdMetadata(url);
+    if (wwdMetadata.title) return wwdMetadata;
+
     const response = UrlFetchApp.fetch(url, {
       followRedirects: true,
       muteHttpExceptions: true,
@@ -72,6 +84,30 @@ function fetchMetadata(url) {
       title: pickTitle(html),
       published: pickPublished(html),
       description: pickDescription(html),
+    };
+  } catch (error) {
+    return {};
+  }
+}
+
+function fetchWwdMetadata(url) {
+  const match = String(url).match(/^https?:\/\/(?:www\.)?wwdjapan\.com\/articles\/(\d+)/i);
+  if (!match) return {};
+
+  try {
+    const response = UrlFetchApp.fetch("https://www.wwdjapan.com/wp-json/wp/v2/posts/" + match[1] + "?_fields=title,date,excerpt", {
+      followRedirects: true,
+      muteHttpExceptions: true,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+        Accept: "application/json,text/html",
+      },
+    });
+    const data = JSON.parse(response.getContentText());
+    return {
+      title: cleanTitle(cleanHtml(data.title && data.title.rendered)),
+      published: normalizeDate(data.date || ""),
+      description: cleanHtml(data.excerpt && data.excerpt.rendered),
     };
   } catch (error) {
     return {};
