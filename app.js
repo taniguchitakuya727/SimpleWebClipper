@@ -39,6 +39,33 @@ function deriveTitle(url) {
   return decodeURIComponent(lastPath).replace(/[-_]+/g, " ");
 }
 
+function cleanTitle(value) {
+  return String(value || "")
+    .replace(/\s[-|｜–—‐-]\s*WWDJAPAN.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*最新ファッション.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*NIKKEIリスキリング.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*日経リスキリング.*$/i, "")
+    .trim();
+}
+
+function looksDerivedTitle(title, url) {
+  const derived = deriveTitle(url);
+  return !title || title === derived || /^[A-Z0-9]{12,}$/i.test(title) || /^\d{5,}$/.test(title);
+}
+
+async function fetchReaderTitle(url) {
+  try {
+    const response = await fetch(`https://r.jina.ai/http://r.jina.ai/http://${url}`, {
+      headers: { accept: "text/plain" },
+    });
+    const text = await response.text();
+    const match = text.match(/^Title:\s*(.+)$/m);
+    return cleanTitle(match?.[1] || "");
+  } catch {
+    return "";
+  }
+}
+
 function inferAuthor(url) {
   const parsed = new URL(url);
   const host = parsed.hostname.replace(/^www\./, "");
@@ -124,6 +151,14 @@ async function fillDerivedFields(url) {
     const title = deriveTitle(url);
     elements.title.value = title;
     setStatus(`URLを受け取りました: ${title}`);
+  }
+  if (looksDerivedTitle(elements.title.value.trim(), url)) {
+    setStatus("タイトルを取得しています...");
+    const title = await fetchReaderTitle(url);
+    if (title) {
+      elements.title.value = title;
+      setStatus(`URLを受け取りました: ${title}`);
+    }
   }
   if (!elements.author.value.trim()) elements.author.value = inferAuthor(url);
 }
