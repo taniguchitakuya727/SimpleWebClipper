@@ -51,6 +51,20 @@ function getSite(url) {
   return new URL(url).hostname.replace(/^www\./, "");
 }
 
+function inferTags(url) {
+  const site = getSite(url);
+  const rules = {
+    "wwdjapan.com": ["fashion", "business"],
+    "reskill.nikkei.com": ["business", "learning"],
+    "nikkei.com": ["business"],
+    "forbesjapan.com": ["business"],
+    "billboard-japan.com": ["music"],
+    "x.com": ["social"],
+    "twitter.com": ["social"],
+  };
+  return ["clippings", ...(rules[site] || [])].join(",");
+}
+
 function deriveTitle(url) {
   const parsed = new URL(url);
   const lastPath = parsed.pathname.split("/").filter(Boolean).at(-1);
@@ -151,7 +165,7 @@ function buildClipPayload({ url, title, author, content }) {
     published: "",
     created,
     description: "",
-    tags: "clippings",
+    tags: inferTags(normalizedUrl),
     content,
   };
 }

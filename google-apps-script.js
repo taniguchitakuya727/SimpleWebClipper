@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-04-url-status-site";
+const SCRIPT_VERSION = "2026-08-04-domain-tags";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -42,7 +42,7 @@ function enrichClip(clip) {
     published: metadata.published || clip.published || "",
     created: clip.created || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd"),
     description: metadata.description || clip.description || "",
-    tags: clip.tags || "clippings",
+    tags: mergeTags(clip.tags, inferTags(source)),
     content: clip.content || "",
   };
 }
@@ -129,6 +129,31 @@ function safeDecodeURIComponent(value) {
 function getSite(url) {
   const match = String(url || "").match(/^https?:\/\/(?:www\.)?([^/?#]+)/i);
   return match ? match[1] : "";
+}
+
+function inferTags(url) {
+  const site = getSite(url);
+  const rules = {
+    "wwdjapan.com": ["fashion", "business"],
+    "reskill.nikkei.com": ["business", "learning"],
+    "nikkei.com": ["business"],
+    "forbesjapan.com": ["business"],
+    "billboard-japan.com": ["music"],
+    "x.com": ["social"],
+    "twitter.com": ["social"],
+  };
+  return ["clippings"].concat(rules[site] || []);
+}
+
+function mergeTags(existing, inferred) {
+  const tags = String(existing || "")
+    .split(",")
+    .concat(inferred || [])
+    .map(function (tag) {
+      return tag.trim();
+    })
+    .filter(Boolean);
+  return Array.from(new Set(tags)).join(",");
 }
 
 function fetchMetadata(url) {
