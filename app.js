@@ -29,7 +29,26 @@ function normalizeUrl(value) {
   const trimmed = value.trim();
   if (!trimmed) throw new Error("empty");
   const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  return new URL(withScheme).toString();
+  const parsed = new URL(withScheme);
+  const removableParams = [
+    "fbclid",
+    "gclid",
+    "igshid",
+    "mc_cid",
+    "mc_eid",
+    "si",
+    "spm",
+  ];
+  for (const key of [...parsed.searchParams.keys()]) {
+    if (/^utm_/i.test(key) || removableParams.includes(key.toLowerCase())) parsed.searchParams.delete(key);
+  }
+  parsed.hash = "";
+  if (parsed.pathname !== "/") parsed.pathname = parsed.pathname.replace(/\/+$/, "");
+  return parsed.toString();
+}
+
+function getSite(url) {
+  return new URL(url).hostname.replace(/^www\./, "");
 }
 
 function deriveTitle(url) {
@@ -120,10 +139,14 @@ function buildMarkdown({ url, title, author, content, published = "", descriptio
 
 function buildClipPayload({ url, title, author, content }) {
   const created = new Date().toISOString().slice(0, 10);
+  const normalizedUrl = normalizeUrl(url);
   return {
     title,
-    source: url,
-    url,
+    source: normalizedUrl,
+    url: normalizedUrl,
+    canonical_source: normalizedUrl,
+    site: getSite(normalizedUrl),
+    status: "unread",
     author,
     published: "",
     created,

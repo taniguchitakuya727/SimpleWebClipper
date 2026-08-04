@@ -35,6 +35,12 @@ https://<username>.github.io/<repo>/?url=
 
 末尾に共有URLを付けます。
 
+タイトルも渡せる場合は、URLエンコードしたタイトルを`title`に付けます。
+
+```txt
+https://<username>.github.io/<repo>/?url=<URLエンコード済みURL>&title=<URLエンコード済みタイトル>
+```
+
 ## Cloudflare Tunnelで使う
 
 Wi-Fiに依存せず使う場合は、パスワード認証付きで起動してからCloudflare Tunnelを使います。
@@ -76,10 +82,11 @@ cloudflared tunnel run --url http://localhost:4173 simple-web-clipper
 2. Apps Scriptを開き、`google-apps-script.js`の内容を貼り付けます。
 3. Webアプリとしてデプロイします。
 4. 発行された`https://script.google.com/macros/s/.../exec`を画面の`Google Apps Script URL`へ貼ります。
-5. `Sheetsへ送信`で行が追加されます。同じ`source` URLが既にある場合は既存行を更新します。
+5. `Sheetsへ送信`で行が追加されます。同じ正規化URLが既にある場合は既存行を更新します。
 6. スプレッドシート本体のURLを`Google Sheet URL`に入れると、`シートを開く`ボタンから確認できます。
 
 タイトル、公開日、説明文はApps Script側でページのHTMLメタデータから自動取得します。
+`site`、`status`、`canonical_source`列がない既存シートでは、次回送信時に自動で列を追加します。`status`の初期値は`unread`です。
 
 現在のデフォルトURL:
 
