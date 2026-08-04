@@ -112,6 +112,8 @@ function cleanTitle(value) {
   return value
     .replace(/\s[-|｜–—‐-]\s*WWDJAPAN.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*最新ファッション.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*NIKKEIリスキリング.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*日経リスキリング.*$/i, "")
     .trim();
 }
 

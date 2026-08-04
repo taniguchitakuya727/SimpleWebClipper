@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "author", "published", "created", "description", "tags", "content"];
-const SCRIPT_VERSION = "2026-08-04-reader-fallback";
+const SCRIPT_VERSION = "2026-08-04-nikkei-title";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -157,6 +157,8 @@ function cleanTitle(value) {
   return value
     .replace(/\s[-|｜–—‐-]\s*WWDJAPAN.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*最新ファッション.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*NIKKEIリスキリング.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*日経リスキリング.*$/i, "")
     .trim();
 }
 
