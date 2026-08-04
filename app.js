@@ -104,6 +104,11 @@ function buildClipPayload({ url, title, author, content }) {
   };
 }
 
+function applyProvidedTitle(value) {
+  const title = String(value || "").trim();
+  if (title) elements.title.value = title;
+}
+
 function downloadText(filename, content) {
   const blob = new Blob([content], { type: "text/markdown" });
   const objectUrl = URL.createObjectURL(blob);
@@ -231,6 +236,7 @@ async function importUrlFromQuery() {
   const params = new URLSearchParams(window.location.search);
   const pathValue = decodeURIComponent(window.location.pathname.slice(1));
   const rawUrl = params.get("url") || (pathValue.startsWith("http") ? pathValue : "");
+  const rawTitle = params.get("title") || "";
   if (!rawUrl) return false;
 
   try {
@@ -238,6 +244,7 @@ async function importUrlFromQuery() {
     elements.url.value = url;
     elements.title.value = "";
     elements.author.value = "";
+    applyProvidedTitle(rawTitle);
     await prepareClipFromUrl({ auto: true });
     window.history.replaceState({}, "", window.location.pathname);
     return true;
