@@ -1,13 +1,15 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-04-domain-tags";
+const SCRIPT_VERSION = "2026-08-04-list-view";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
-  const output = url
-    ? { ok: true, version: SCRIPT_VERSION, metadata: fetchMetadata(url) }
-    : { ok: true, version: SCRIPT_VERSION };
-  return ContentService.createTextOutput(JSON.stringify(output)).setMimeType(ContentService.MimeType.JSON);
+  const output = e && e.parameter && e.parameter.list
+    ? { ok: true, version: SCRIPT_VERSION, clips: listClips(Number(e.parameter.limit || 200)) }
+    : url
+      ? { ok: true, version: SCRIPT_VERSION, metadata: fetchMetadata(url) }
+      : { ok: true, version: SCRIPT_VERSION };
+  return jsonOutput(output, e && e.parameter && e.parameter.callback);
 }
 
 function doPost(e) {
@@ -26,6 +28,49 @@ function doPost(e) {
   }
 
   return ContentService.createTextOutput(JSON.stringify({ ok: true, updated: Boolean(rowNumber) })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function jsonOutput(value, callback) {
+  const json = JSON.stringify(value);
+  const safeCallback = /^[A-Za-z_$][0-9A-Za-z_$]*$/.test(callback || "") ? callback : "";
+  const body = safeCallback ? safeCallback + "(" + json + ")" : json;
+  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function listClips(limit) {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
+  const headerMap = ensureHeader(sheet);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const rowCount = Math.min(Math.max(limit || 200, 1), lastRow - 1);
+  const startRow = Math.max(2, lastRow - rowCount + 1);
+  const rows = sheet.getRange(startRow, 1, rowCount, sheet.getLastColumn()).getValues();
+  return rows.reverse().map(function (row) {
+    return {
+      timestamp: getCell(row, headerMap.timestamp),
+      title: getCell(row, headerMap.title),
+      source: getCell(row, headerMap.source),
+      site: getCell(row, headerMap.site),
+      status: getCell(row, headerMap.status),
+      author: getCell(row, headerMap.author),
+      published: getCell(row, headerMap.published),
+      created: getCell(row, headerMap.created),
+      description: getCell(row, headerMap.description),
+      tags: getCell(row, headerMap.tags),
+      content: getCell(row, headerMap.content),
+      canonical_source: getCell(row, headerMap.canonical_source),
+    };
+  });
+}
+
+function getCell(row, column) {
+  const value = column ? row[column - 1] : "";
+  if (Object.prototype.toString.call(value) === "[object Date]") {
+    return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
+  }
+  return value || "";
 }
 
 function enrichClip(clip) {

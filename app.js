@@ -8,7 +8,11 @@ const elements = {
   pasteHelp: document.querySelector("#pasteHelpButton"),
   download: document.querySelector("#downloadButton"),
   sendSheets: document.querySelector("#sendSheetsButton"),
+  loadList: document.querySelector("#loadListButton"),
   openSheet: document.querySelector("#openSheetButton"),
+  search: document.querySelector("#searchInput"),
+  statusFilter: document.querySelector("#statusFilter"),
+  clipList: document.querySelector("#clipList"),
   status: document.querySelector("#statusText"),
 };
 
@@ -20,6 +24,7 @@ elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) |
 elements.sheetUrl.value = localStorage.getItem(sheetUrlStorageKey) || defaultSheetUrl;
 let lastSentUrl = "";
 let triedStartupClipboard = false;
+let clips = [];
 
 function setStatus(message) {
   elements.status.textContent = message;
@@ -292,6 +297,87 @@ function openSheet() {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const callback = `simpleWebClipperCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    const separator = url.includes("?") ? "&" : "?";
+    script.src = `${url}${separator}callback=${callback}`;
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("jsonp failed"));
+    };
+    window[callback] = (data) => {
+      cleanup();
+      resolve(data);
+    };
+    function cleanup() {
+      delete window[callback];
+      script.remove();
+    }
+    document.body.appendChild(script);
+  });
+}
+
+async function loadClipList() {
+  const endpoint = elements.sheetsEndpoint.value.trim();
+  if (!endpoint) {
+    setStatus("Google Apps Script URLを入力してください。");
+    return;
+  }
+
+  setStatus("リストを読み込んでいます...");
+  try {
+    const data = await jsonp(`${endpoint}?list=1&limit=300`);
+    clips = Array.isArray(data.clips) ? data.clips : [];
+    renderClipList();
+    setStatus(`${clips.length}件を読み込みました。`);
+  } catch {
+    setStatus("リストを読み込めませんでした。Apps Scriptを最新版に再デプロイしてください。");
+  }
+}
+
+function renderClipList() {
+  const query = elements.search.value.trim().toLowerCase();
+  const status = elements.statusFilter.value;
+  const filtered = clips.filter((clip) => {
+    const haystack = [clip.title, clip.source, clip.site, clip.tags, clip.description, clip.author].join(" ").toLowerCase();
+    return (!query || haystack.includes(query)) && (!status || clip.status === status);
+  });
+
+  elements.clipList.textContent = "";
+  if (!filtered.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-list";
+    empty.textContent = clips.length ? "一致するクリップはありません。" : "まだ読み込まれていません。";
+    elements.clipList.appendChild(empty);
+    return;
+  }
+
+  for (const clip of filtered) {
+    const item = document.createElement("article");
+    item.className = "clip-item";
+
+    const title = document.createElement("a");
+    title.className = "clip-title";
+    title.href = clip.source || clip.canonical_source || "#";
+    title.target = "_blank";
+    title.rel = "noopener noreferrer";
+    title.textContent = clip.title || clip.source || "untitled";
+
+    const meta = document.createElement("div");
+    meta.className = "clip-meta";
+    meta.textContent = [clip.site, clip.status, clip.tags, clip.created || clip.timestamp].filter(Boolean).join(" / ");
+
+    const description = document.createElement("p");
+    description.className = "clip-description";
+    description.textContent = clip.description || clip.source || "";
+
+    item.append(title, meta, description);
+    elements.clipList.appendChild(item);
+  }
+}
+
 async function importClipboardOnStartup() {
   if (triedStartupClipboard || !navigator.clipboard?.readText) return;
   triedStartupClipboard = true;
@@ -343,7 +429,10 @@ elements.url.addEventListener("change", () => {
 elements.download.addEventListener("click", () => createMarkdown());
 elements.pasteHelp.addEventListener("click", focusUrlInput);
 elements.sendSheets.addEventListener("click", sendToSheets);
+elements.loadList.addEventListener("click", loadClipList);
 elements.openSheet.addEventListener("click", openSheet);
+elements.search.addEventListener("input", renderClipList);
+elements.statusFilter.addEventListener("change", renderClipList);
 elements.sheetsEndpoint.addEventListener("input", () => {
   localStorage.setItem(sheetsEndpointStorageKey, elements.sheetsEndpoint.value.trim());
 });

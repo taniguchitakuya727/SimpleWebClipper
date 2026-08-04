@@ -49,13 +49,34 @@
           <button id="pasteHelpButton" type="button">URL欄に貼り付け</button>
           <button id="downloadButton" type="button">Markdown作成</button>
           <button id="sendSheetsButton" type="button">Sheetsへ送信</button>
+          <button id="loadListButton" type="button">リスト更新</button>
           <button id="openSheetButton" type="button">シートを開く</button>
         </div>
 
         <p id="statusText" class="status" role="status" aria-live="polite"></p>
+
+        <section class="list-panel" aria-label="クリップ一覧">
+          <div class="list-toolbar">
+            <label>
+              検索
+              <input id="searchInput" type="search" placeholder="タイトル、URL、タグ、サイト" />
+            </label>
+            <label>
+              状態
+              <select id="statusFilter">
+                <option value="">すべて</option>
+                <option value="unread">unread</option>
+                <option value="reading">reading</option>
+                <option value="done">done</option>
+                <option value="archive">archive</option>
+              </select>
+            </label>
+          </div>
+          <div id="clipList" class="clip-list"></div>
+        </section>
       </section>
     </main>
 
-    <script src="app.js?v=20260804-url-status-site"></script>
+    <script src="app.js?v=20260804-list-view"></script>
   </body>
 </html>

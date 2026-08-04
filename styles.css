@@ -65,12 +65,14 @@ label {
 
 input,
 textarea,
+select,
 button {
   font: inherit;
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -84,6 +86,10 @@ input {
   min-height: 46px;
 }
 
+select {
+  min-height: 46px;
+}
+
 textarea {
   min-height: 160px;
   line-height: 1.55;
@@ -91,7 +97,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(31, 118, 109, 0.14);
 }
@@ -128,6 +135,60 @@ button:hover {
   font-size: 0.92rem;
 }
 
+.list-panel {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.list-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  gap: 12px;
+}
+
+.clip-list {
+  display: grid;
+  gap: 10px;
+}
+
+.clip-item {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfb;
+}
+
+.clip-title {
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.clip-title:hover {
+  color: var(--accent);
+}
+
+.clip-meta,
+.clip-description,
+.empty-list {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.clip-description {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 @media (max-width: 640px) {
   .app-shell {
     width: min(100% - 20px, 760px);
@@ -139,6 +200,10 @@ button:hover {
   }
 
   .mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .list-toolbar {
     grid-template-columns: 1fr;
   }
 }
