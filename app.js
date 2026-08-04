@@ -50,13 +50,15 @@ function cleanTitle(value) {
 
 function looksDerivedTitle(title, url) {
   const derived = deriveTitle(url);
-  return !title || title === derived || /^[A-Z0-9]{12,}$/i.test(title) || /^\d{5,}$/.test(title);
+  const host = new URL(url).hostname.replace(/^www\./, "");
+  return !title || title === derived || /^[A-Z0-9]{12,}$/i.test(title) || /^\d{5,}$/.test(title) || ["reskill.nikkei.com", "wwdjapan.com"].includes(host);
 }
 
 async function fetchReaderTitle(url) {
   try {
     const response = await fetch(`https://r.jina.ai/http://r.jina.ai/http://${url}`, {
       headers: { accept: "text/plain" },
+      cache: "no-store",
     });
     const text = await response.text();
     const match = text.match(/^Title:\s*(.+)$/m);
@@ -132,7 +134,7 @@ function buildClipPayload({ url, title, author, content }) {
 }
 
 function applyProvidedTitle(value) {
-  const title = String(value || "").trim();
+  const title = cleanTitle(value);
   if (title) elements.title.value = title;
 }
 
@@ -151,6 +153,8 @@ async function fillDerivedFields(url) {
     const title = deriveTitle(url);
     elements.title.value = title;
     setStatus(`URLを受け取りました: ${title}`);
+  } else {
+    elements.title.value = cleanTitle(elements.title.value);
   }
   if (looksDerivedTitle(elements.title.value.trim(), url)) {
     setStatus("タイトルを取得しています...");
