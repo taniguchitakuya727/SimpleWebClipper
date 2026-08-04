@@ -94,17 +94,46 @@ function stripTags(value) {
 }
 
 function pickTitle(html) {
-  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-  const metaTitle = getNamedMetaContent(html, "twitter:title") || getMetaContent(html, ["twitter:title", "og:title"]);
-  const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  return cleanTitle(decodeHtml(stripTags(h1?.[1] || metaTitle || title?.[1] || "").replace(/\s+/g, " ").trim()));
+  const candidates = [
+    getJsonLdValue(html, "headline"),
+    matchFirst(html, /<h1[^>]+class=["'][^"']*\bentry-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i),
+    getMetaContent(html, ["og:title", "twitter:title"]),
+    matchFirst(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i),
+    matchFirst(html, /<title[^>]*>([\s\S]*?)<\/title>/i),
+  ];
+  for (const candidate of candidates) {
+    const title = cleanTitle(decodeHtml(stripTags(candidate).replace(/\s+/g, " ").trim()));
+    if (isGoodTitle(title)) return title;
+  }
+  return "";
 }
 
 function cleanTitle(value) {
   return value
-    .replace(/\s[-|]\sWWDJAPAN.*$/i, "")
-    .replace(/\s[-|]\s最新ファッション.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*WWDJAPAN.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*最新ファッション.*$/i, "")
     .trim();
+}
+
+function isGoodTitle(value) {
+  if (!value || value.length < 4) return false;
+  if (/ERROR:|request could not be satisfied|access denied|not found/i.test(value)) return false;
+  return true;
+}
+
+function matchFirst(value, pattern) {
+  const match = value.match(pattern);
+  return match?.[1] || "";
+}
+
+function getJsonLdValue(html, key) {
+  const scripts = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+  const pattern = new RegExp(`"${key}"\\s*:\\s*"([^"]+)"`, "i");
+  for (const script of scripts) {
+    const match = script.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+  return "";
 }
 
 function pickDescription(html) {
