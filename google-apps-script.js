@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-04-list-view";
+const SCRIPT_VERSION = "2026-08-05-youtube-title";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -184,6 +184,8 @@ function inferTags(url) {
     "nikkei.com": ["business"],
     "forbesjapan.com": ["business"],
     "billboard-japan.com": ["music"],
+    "youtube.com": ["video"],
+    "youtu.be": ["video"],
     "x.com": ["social"],
     "twitter.com": ["social"],
   };
@@ -203,6 +205,9 @@ function mergeTags(existing, inferred) {
 
 function fetchMetadata(url) {
   try {
+    const youtubeMetadata = fetchYoutubeMetadata(url);
+    if (youtubeMetadata.title) return youtubeMetadata;
+
     const wwdMetadata = fetchWwdMetadata(url);
     if (wwdMetadata.title) return wwdMetadata;
 
@@ -226,6 +231,34 @@ function fetchMetadata(url) {
   } catch (error) {
     return fetchReaderMetadata(url);
   }
+}
+
+function fetchYoutubeMetadata(url) {
+  if (!isYoutubeUrl(url)) return {};
+
+  try {
+    const response = UrlFetchApp.fetch("https://www.youtube.com/oembed?url=" + encodeURIComponent(url) + "&format=json", {
+      followRedirects: true,
+      muteHttpExceptions: true,
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        Accept: "application/json",
+      },
+    });
+    const data = JSON.parse(response.getContentText());
+    return {
+      title: cleanTitle(data.title || ""),
+      published: "",
+      description: data.author_name || "",
+    };
+  } catch (error) {
+    return {};
+  }
+}
+
+function isYoutubeUrl(url) {
+  const site = getSite(url);
+  return site === "youtube.com" || site === "youtu.be";
 }
 
 function fetchWwdMetadata(url) {

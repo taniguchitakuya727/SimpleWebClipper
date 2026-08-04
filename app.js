@@ -64,6 +64,8 @@ function inferTags(url) {
     "nikkei.com": ["business"],
     "forbesjapan.com": ["business"],
     "billboard-japan.com": ["music"],
+    "youtube.com": ["video"],
+    "youtu.be": ["video"],
     "x.com": ["social"],
     "twitter.com": ["social"],
   };
@@ -89,11 +91,14 @@ function cleanTitle(value) {
 function looksDerivedTitle(title, url) {
   const derived = deriveTitle(url);
   const host = new URL(url).hostname.replace(/^www\./, "");
-  return !title || title === derived || /^[A-Z0-9]{12,}$/i.test(title) || /^\d{5,}$/.test(title) || ["reskill.nikkei.com", "wwdjapan.com"].includes(host);
+  return !title || title === derived || /^[A-Z0-9_-]{8,}$/i.test(title) || /^\d{5,}$/.test(title) || ["reskill.nikkei.com", "wwdjapan.com", "youtube.com", "youtu.be"].includes(host);
 }
 
 async function fetchReaderTitle(url) {
   try {
+    const youtubeTitle = await fetchYoutubeTitle(url);
+    if (youtubeTitle) return youtubeTitle;
+
     const response = await fetch(`https://r.jina.ai/http://r.jina.ai/http://${url}`, {
       headers: { accept: "text/plain" },
       cache: "no-store",
@@ -104,6 +109,24 @@ async function fetchReaderTitle(url) {
   } catch {
     return "";
   }
+}
+
+async function fetchYoutubeTitle(url) {
+  if (!isYoutubeUrl(url)) return "";
+  try {
+    const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`, {
+      cache: "no-store",
+    });
+    const data = await response.json();
+    return cleanTitle(data.title || "");
+  } catch {
+    return "";
+  }
+}
+
+function isYoutubeUrl(url) {
+  const site = getSite(url);
+  return site === "youtube.com" || site === "youtu.be";
 }
 
 function inferAuthor(url) {

@@ -209,6 +209,12 @@ async function handleMetadata(request, response) {
     const parsed = new URL(target);
     if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("unsupported protocol");
 
+    const youtubeMetadata = await fetchYoutubeMetadata(parsed.toString());
+    if (youtubeMetadata.title) {
+      send(response, 200, JSON.stringify(youtubeMetadata), "application/json; charset=utf-8", { "cache-control": "no-store" });
+      return;
+    }
+
     const wwdMetadata = await fetchWwdMetadata(parsed.toString());
     if (wwdMetadata.title) {
       send(response, 200, JSON.stringify(wwdMetadata), "application/json; charset=utf-8", { "cache-control": "no-store" });
@@ -227,6 +233,36 @@ async function handleMetadata(request, response) {
     send(response, 200, JSON.stringify(metadata.title ? metadata : await fetchReaderMetadata(parsed.toString())), "application/json; charset=utf-8", { "cache-control": "no-store" });
   } catch (error) {
     send(response, 200, JSON.stringify(await fetchReaderMetadata(target)), "application/json; charset=utf-8", { "cache-control": "no-store" });
+  }
+}
+
+async function fetchYoutubeMetadata(url) {
+  if (!isYoutubeUrl(url)) return {};
+
+  try {
+    const api = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`, {
+      headers: {
+        "user-agent": "Mozilla/5.0",
+        accept: "application/json",
+      },
+    });
+    const data = await api.json();
+    return {
+      title: cleanTitle(data.title || ""),
+      published: "",
+      description: data.author_name || "",
+    };
+  } catch {
+    return {};
+  }
+}
+
+function isYoutubeUrl(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return host === "youtube.com" || host === "youtu.be";
+  } catch {
+    return false;
   }
 }
 

@@ -89,6 +89,7 @@ cloudflared tunnel run --url http://localhost:4173 simple-web-clipper
 `site`、`status`、`canonical_source`列がない既存シートでは、次回送信時に自動で列を追加します。`status`の初期値は`unread`です。
 `tags`にはドメインに応じて`fashion`、`business`、`learning`、`music`、`social`などを自動付与します。
 Webアプリの`リスト更新`から直近のクリップを読み込み、タイトル、URL、タグ、サイト、状態で検索できます。
+YouTubeはoEmbedからタイトルを取得し、`video`タグを自動付与します。
 
 現在のデフォルトURL:
 
