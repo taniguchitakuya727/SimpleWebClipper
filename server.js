@@ -94,10 +94,17 @@ function stripTags(value) {
 }
 
 function pickTitle(html) {
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
   const metaTitle = getNamedMetaContent(html, "twitter:title") || getMetaContent(html, ["twitter:title", "og:title"]);
   const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-  return decodeHtml(stripTags(metaTitle || title?.[1] || h1?.[1] || "").replace(/\s+/g, " ").trim());
+  return cleanTitle(decodeHtml(stripTags(h1?.[1] || metaTitle || title?.[1] || "").replace(/\s+/g, " ").trim()));
+}
+
+function cleanTitle(value) {
+  return value
+    .replace(/\s[-|]\sWWDJAPAN.*$/i, "")
+    .replace(/\s[-|]\s最新ファッション.*$/i, "")
+    .trim();
 }
 
 function pickDescription(html) {
@@ -173,7 +180,7 @@ async function handleMetadata(request, response) {
 
     const page = await fetch(parsed.toString(), {
       headers: {
-        "user-agent": "SimpleWebClipper/1.0",
+        "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
         accept: "text/html,application/xhtml+xml",
       },
     });

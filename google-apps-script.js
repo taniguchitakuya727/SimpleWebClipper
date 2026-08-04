@@ -63,7 +63,7 @@ function fetchMetadata(url) {
       followRedirects: true,
       muteHttpExceptions: true,
       headers: {
-        "User-Agent": "SimpleWebClipper/1.0",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
         Accept: "text/html,application/xhtml+xml",
       },
     });
@@ -79,7 +79,14 @@ function fetchMetadata(url) {
 }
 
 function pickTitle(html) {
-  return cleanHtml(getNamedMeta(html, "twitter:title") || getMeta(html, ["twitter:title", "og:title"]) || matchFirst(html, /<title[^>]*>([\s\S]*?)<\/title>/i) || matchFirst(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i));
+  return cleanTitle(cleanHtml(matchFirst(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i) || getNamedMeta(html, "twitter:title") || getMeta(html, ["twitter:title", "og:title"]) || matchFirst(html, /<title[^>]*>([\s\S]*?)<\/title>/i)));
+}
+
+function cleanTitle(value) {
+  return value
+    .replace(/\s[-|]\sWWDJAPAN.*$/i, "")
+    .replace(/\s[-|]\s最新ファッション.*$/i, "")
+    .trim();
 }
 
 function pickDescription(html) {
