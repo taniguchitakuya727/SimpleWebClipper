@@ -221,9 +221,10 @@ async function handleMetadata(request, response) {
     });
     const bytes = new Uint8Array(await page.arrayBuffer());
     const html = decodePage(page.headers, bytes);
-    send(response, 200, JSON.stringify(pickMetadata(html)), "application/json; charset=utf-8", { "cache-control": "no-store" });
+    const metadata = pickMetadata(html);
+    send(response, 200, JSON.stringify(metadata.title ? metadata : await fetchReaderMetadata(parsed.toString())), "application/json; charset=utf-8", { "cache-control": "no-store" });
   } catch (error) {
-    send(response, 200, JSON.stringify({ title: "", published: "", description: "" }), "application/json; charset=utf-8", { "cache-control": "no-store" });
+    send(response, 200, JSON.stringify(await fetchReaderMetadata(target)), "application/json; charset=utf-8", { "cache-control": "no-store" });
   }
 }
 
@@ -246,6 +247,25 @@ async function fetchWwdMetadata(url) {
     };
   } catch {
     return {};
+  }
+}
+
+async function fetchReaderMetadata(url) {
+  try {
+    const reader = await fetch(`https://r.jina.ai/http://r.jina.ai/http://${url}`, {
+      headers: {
+        "user-agent": "Mozilla/5.0",
+        accept: "text/plain",
+      },
+    });
+    const text = await reader.text();
+    return {
+      title: cleanTitle(decodeHtml(stripTags(matchFirst(text, /^Title:\s*(.+)$/m)).replace(/\s+/g, " ").trim())),
+      published: normalizeDate(matchFirst(text, /^Published Time:\s*(.+)$/m)),
+      description: decodeHtml(stripTags(matchFirst(text, /^Markdown Content:\s*[\r\n]+([\s\S]{0,500})/m)).replace(/\s+/g, " ").trim()),
+    };
+  } catch {
+    return { title: "", published: "", description: "" };
   }
 }
 

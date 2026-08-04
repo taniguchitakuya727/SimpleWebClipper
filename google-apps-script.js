@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "author", "published", "created", "description", "tags", "content"];
-const SCRIPT_VERSION = "2026-08-04-wwd-api";
+const SCRIPT_VERSION = "2026-08-04-reader-fallback";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -80,13 +80,16 @@ function fetchMetadata(url) {
       },
     });
     const html = response.getContentText();
-    return {
+    const metadata = {
       title: pickTitle(html),
       published: pickPublished(html),
       description: pickDescription(html),
     };
+    if (metadata.title) return metadata;
+
+    return fetchReaderMetadata(url);
   } catch (error) {
-    return {};
+    return fetchReaderMetadata(url);
   }
 }
 
@@ -108,6 +111,27 @@ function fetchWwdMetadata(url) {
       title: cleanTitle(cleanHtml(data.title && data.title.rendered)),
       published: normalizeDate(data.date || ""),
       description: cleanHtml(data.excerpt && data.excerpt.rendered),
+    };
+  } catch (error) {
+    return {};
+  }
+}
+
+function fetchReaderMetadata(url) {
+  try {
+    const response = UrlFetchApp.fetch("https://r.jina.ai/http://r.jina.ai/http://" + url, {
+      followRedirects: true,
+      muteHttpExceptions: true,
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        Accept: "text/plain",
+      },
+    });
+    const text = response.getContentText();
+    return {
+      title: cleanTitle(cleanHtml(matchFirst(text, /^Title:\s*(.+)$/m))),
+      published: normalizeDate(matchFirst(text, /^Published Time:\s*(.+)$/m)),
+      description: cleanHtml(matchFirst(text, /^Markdown Content:\s*[\r\n]+([\s\S]{0,500})/m)),
     };
   } catch (error) {
     return {};
