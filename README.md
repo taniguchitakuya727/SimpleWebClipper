@@ -90,7 +90,7 @@ cloudflared tunnel run --url http://localhost:4173 simple-web-clipper
 `tags`にはドメインに応じて`fashion`、`business`、`learning`、`music`、`social`などを自動付与します。
 Webアプリの`リスト更新`から直近のクリップを読み込み、タイトル、URL、タグ、サイト、状態で検索できます。
 YouTubeはoEmbedからタイトルを取得し、`video`タグを自動付与します。
-WELD MUSICのブログは本文の`entry-title`から記事タイトルを取得します。
+WELD MUSICのブログはWordPress APIまたは本文の`entry-title`から記事タイトルを取得します。
 Lifehacker Japanは日本語記事タイトルを優先し、`productivity,business`タグを自動付与します。
 
 現在のデフォルトURL:

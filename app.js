@@ -95,13 +95,16 @@ function cleanTitle(value) {
 function looksDerivedTitle(title, url) {
   const derived = deriveTitle(url);
   const host = new URL(url).hostname.replace(/^www\./, "");
-  return !title || title === derived || /^[A-Z0-9_-]{8,}$/i.test(title) || /^\d{5,}$/.test(title) || ["reskill.nikkei.com", "wwdjapan.com", "youtube.com", "youtu.be"].includes(host);
+  return !title || title === derived || /^[A-Z0-9_-]{8,}$/i.test(title) || /^\d{5,}$/.test(title) || ["reskill.nikkei.com", "wwdjapan.com", "weld-music.com", "youtube.com", "youtu.be"].includes(host);
 }
 
 async function fetchReaderTitle(url) {
   try {
     const youtubeTitle = await fetchYoutubeTitle(url);
     if (youtubeTitle) return youtubeTitle;
+
+    const weldTitle = await fetchWeldTitle(url);
+    if (weldTitle) return weldTitle;
 
     const response = await fetch(`https://r.jina.ai/http://r.jina.ai/http://${url}`, {
       headers: { accept: "text/plain" },
@@ -131,6 +134,20 @@ async function fetchYoutubeTitle(url) {
 function isYoutubeUrl(url) {
   const site = getSite(url);
   return site === "youtube.com" || site === "youtu.be";
+}
+
+async function fetchWeldTitle(url) {
+  const match = url.match(/^https?:\/\/(?:www\.)?weld-music\.com\/blog\/(\d+)/i);
+  if (!match) return "";
+  try {
+    const response = await fetch(`https://weld-music.com/wp-json/wp/v2/posts/${match[1]}?_fields=title`, {
+      cache: "no-store",
+    });
+    const data = await response.json();
+    return cleanTitle(data.title?.rendered || "");
+  } catch {
+    return "";
+  }
 }
 
 function inferAuthor(url) {

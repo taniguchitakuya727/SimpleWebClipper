@@ -218,6 +218,12 @@ async function handleMetadata(request, response) {
       return;
     }
 
+    const weldMetadata = await fetchWeldMetadata(parsed.toString());
+    if (weldMetadata.title) {
+      send(response, 200, JSON.stringify(weldMetadata), "application/json; charset=utf-8", { "cache-control": "no-store" });
+      return;
+    }
+
     const wwdMetadata = await fetchWwdMetadata(parsed.toString());
     if (wwdMetadata.title) {
       send(response, 200, JSON.stringify(wwdMetadata), "application/json; charset=utf-8", { "cache-control": "no-store" });
@@ -266,6 +272,28 @@ function isYoutubeUrl(url) {
     return host === "youtube.com" || host === "youtu.be";
   } catch {
     return false;
+  }
+}
+
+async function fetchWeldMetadata(url) {
+  const match = url.match(/^https?:\/\/(?:www\.)?weld-music\.com\/blog\/(\d+)/i);
+  if (!match) return {};
+
+  try {
+    const api = await fetch(`https://weld-music.com/wp-json/wp/v2/posts/${match[1]}?_fields=title,date,excerpt`, {
+      headers: {
+        "user-agent": "Mozilla/5.0",
+        accept: "application/json",
+      },
+    });
+    const data = await api.json();
+    return {
+      title: cleanTitle(decodeHtml(stripTags(data.title?.rendered || "").replace(/\s+/g, " ").trim())),
+      published: normalizeDate(data.date || ""),
+      description: decodeHtml(stripTags(data.excerpt?.rendered || "").replace(/\s+/g, " ").trim()),
+    };
+  } catch {
+    return {};
   }
 }
 

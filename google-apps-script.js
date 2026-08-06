@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-06-lifehacker-title";
+const SCRIPT_VERSION = "2026-08-06-weld-api-title";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -210,6 +210,9 @@ function fetchMetadata(url) {
     const youtubeMetadata = fetchYoutubeMetadata(url);
     if (youtubeMetadata.title) return youtubeMetadata;
 
+    const weldMetadata = fetchWeldMetadata(url);
+    if (weldMetadata.title) return weldMetadata;
+
     const wwdMetadata = fetchWwdMetadata(url);
     if (wwdMetadata.title) return wwdMetadata;
 
@@ -261,6 +264,30 @@ function fetchYoutubeMetadata(url) {
 function isYoutubeUrl(url) {
   const site = getSite(url);
   return site === "youtube.com" || site === "youtu.be";
+}
+
+function fetchWeldMetadata(url) {
+  const match = String(url).match(/^https?:\/\/(?:www\.)?weld-music\.com\/blog\/(\d+)/i);
+  if (!match) return {};
+
+  try {
+    const response = UrlFetchApp.fetch("https://weld-music.com/wp-json/wp/v2/posts/" + match[1] + "?_fields=title,date,excerpt", {
+      followRedirects: true,
+      muteHttpExceptions: true,
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        Accept: "application/json",
+      },
+    });
+    const data = JSON.parse(response.getContentText());
+    return {
+      title: cleanTitle(cleanHtml(data.title && data.title.rendered)),
+      published: normalizeDate(data.date || ""),
+      description: cleanHtml(data.excerpt && data.excerpt.rendered),
+    };
+  } catch (error) {
+    return {};
+  }
 }
 
 function fetchWwdMetadata(url) {
