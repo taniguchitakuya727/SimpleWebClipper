@@ -112,7 +112,8 @@ async function fetchReaderTitle(url) {
     });
     const text = await response.text();
     const match = text.match(/^Title:\s*(.+)$/m);
-    return cleanTitle(match?.[1] || "");
+    const title = cleanTitle(match?.[1] || "");
+    return isGoodTitle(title) ? title : "";
   } catch {
     return "";
   }
@@ -134,6 +135,13 @@ async function fetchYoutubeTitle(url) {
 function isYoutubeUrl(url) {
   const site = getSite(url);
   return site === "youtube.com" || site === "youtu.be";
+}
+
+function isGoodTitle(value) {
+  if (!value || value.length < 4) return false;
+  if (/^https?:\/\//i.test(value)) return false;
+  if (/doubleclick|pixel|request could not be satisfied|access denied|not found/i.test(value)) return false;
+  return true;
 }
 
 async function fetchWeldTitle(url) {

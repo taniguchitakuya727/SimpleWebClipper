@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-06-weld-api-title";
+const SCRIPT_VERSION = "2026-08-06-title-guard";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -325,8 +325,9 @@ function fetchReaderMetadata(url) {
       },
     });
     const text = response.getContentText();
+    const title = cleanTitle(cleanHtml(matchFirst(text, /^Title:\s*(.+)$/m)));
     return {
-      title: cleanTitle(cleanHtml(matchFirst(text, /^Title:\s*(.+)$/m))),
+      title: isGoodTitle(title) ? title : "",
       published: normalizeDate(matchFirst(text, /^Published Time:\s*(.+)$/m)),
       description: cleanHtml(matchFirst(text, /^Markdown Content:\s*[\r\n]+([\s\S]{0,500})/m)),
     };
@@ -340,6 +341,7 @@ function pickTitle(html) {
     getJsonLdValue(html, "headline"),
     matchFirst(html, /<h[1-3][^>]+class=["'][^"']*\bentry-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h[1-3]>/i),
     matchFirst(html, /<h1[^>]+class=["'][^"']*\barticle_[^"']*Title\b[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i),
+    getMeta(html, ["cxenseparse:title", "cXenseParse:title"]),
     getMeta(html, ["og:title", "twitter:title"]),
     matchFirst(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i),
     matchFirst(html, /<title[^>]*>([\s\S]*?)<\/title>/i),
@@ -364,7 +366,8 @@ function cleanTitle(value) {
 
 function isGoodTitle(value) {
   if (!value || value.length < 4) return false;
-  if (/ERROR:|request could not be satisfied|access denied|not found/i.test(value)) return false;
+  if (/^https?:\/\//i.test(value)) return false;
+  if (/ERROR:|doubleclick|pixel|request could not be satisfied|access denied|not found/i.test(value)) return false;
   return true;
 }
 

@@ -98,6 +98,7 @@ function pickTitle(html) {
     getJsonLdValue(html, "headline"),
     matchFirst(html, /<h[1-3][^>]+class=["'][^"']*\bentry-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h[1-3]>/i),
     matchFirst(html, /<h1[^>]+class=["'][^"']*\barticle_[^"']*Title\b[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i),
+    getMetaContent(html, ["cxenseparse:title", "cXenseParse:title"]),
     getMetaContent(html, ["og:title", "twitter:title"]),
     matchFirst(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i),
     matchFirst(html, /<title[^>]*>([\s\S]*?)<\/title>/i),
@@ -122,7 +123,8 @@ function cleanTitle(value) {
 
 function isGoodTitle(value) {
   if (!value || value.length < 4) return false;
-  if (/ERROR:|request could not be satisfied|access denied|not found/i.test(value)) return false;
+  if (/^https?:\/\//i.test(value)) return false;
+  if (/ERROR:|doubleclick|pixel|request could not be satisfied|access denied|not found/i.test(value)) return false;
   return true;
 }
 
@@ -328,8 +330,9 @@ async function fetchReaderMetadata(url) {
       },
     });
     const text = await reader.text();
+    const title = cleanTitle(decodeHtml(stripTags(matchFirst(text, /^Title:\s*(.+)$/m)).replace(/\s+/g, " ").trim()));
     return {
-      title: cleanTitle(decodeHtml(stripTags(matchFirst(text, /^Title:\s*(.+)$/m)).replace(/\s+/g, " ").trim())),
+      title: isGoodTitle(title) ? title : "",
       published: normalizeDate(matchFirst(text, /^Published Time:\s*(.+)$/m)),
       description: decodeHtml(stripTags(matchFirst(text, /^Markdown Content:\s*[\r\n]+([\s\S]{0,500})/m)).replace(/\s+/g, " ").trim()),
     };
