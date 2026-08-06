@@ -64,6 +64,7 @@ function inferTags(url) {
     "nikkei.com": ["business"],
     "forbesjapan.com": ["business"],
     "billboard-japan.com": ["music"],
+    "weld-music.com": ["music", "blog"],
     "youtube.com": ["video"],
     "youtu.be": ["video"],
     "x.com": ["social"],
@@ -85,6 +86,7 @@ function cleanTitle(value) {
     .replace(/\s[-|｜–—‐-]\s*最新ファッション.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*NIKKEIリスキリング.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*日経リスキリング.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*WELD MUSIC.*$/i, "")
     .trim();
 }
 

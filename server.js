@@ -96,7 +96,7 @@ function stripTags(value) {
 function pickTitle(html) {
   const candidates = [
     getJsonLdValue(html, "headline"),
-    matchFirst(html, /<h1[^>]+class=["'][^"']*\bentry-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i),
+    matchFirst(html, /<h[1-3][^>]+class=["'][^"']*\bentry-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h[1-3]>/i),
     getMetaContent(html, ["og:title", "twitter:title"]),
     matchFirst(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i),
     matchFirst(html, /<title[^>]*>([\s\S]*?)<\/title>/i),
@@ -114,6 +114,7 @@ function cleanTitle(value) {
     .replace(/\s[-|｜–—‐-]\s*最新ファッション.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*NIKKEIリスキリング.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*日経リスキリング.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*WELD MUSIC.*$/i, "")
     .trim();
 }
 

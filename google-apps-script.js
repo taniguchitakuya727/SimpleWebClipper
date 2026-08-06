@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-05-youtube-title";
+const SCRIPT_VERSION = "2026-08-06-weld-title";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -184,6 +184,7 @@ function inferTags(url) {
     "nikkei.com": ["business"],
     "forbesjapan.com": ["business"],
     "billboard-japan.com": ["music"],
+    "weld-music.com": ["music", "blog"],
     "youtube.com": ["video"],
     "youtu.be": ["video"],
     "x.com": ["social"],
@@ -309,7 +310,7 @@ function fetchReaderMetadata(url) {
 function pickTitle(html) {
   const candidates = [
     getJsonLdValue(html, "headline"),
-    matchFirst(html, /<h1[^>]+class=["'][^"']*\bentry-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i),
+    matchFirst(html, /<h[1-3][^>]+class=["'][^"']*\bentry-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h[1-3]>/i),
     getMeta(html, ["og:title", "twitter:title"]),
     matchFirst(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i),
     matchFirst(html, /<title[^>]*>([\s\S]*?)<\/title>/i),
@@ -327,6 +328,7 @@ function cleanTitle(value) {
     .replace(/\s[-|｜–—‐-]\s*最新ファッション.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*NIKKEIリスキリング.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*日経リスキリング.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*WELD MUSIC.*$/i, "")
     .trim();
 }
 
