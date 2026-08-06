@@ -63,6 +63,7 @@ function inferTags(url) {
     "reskill.nikkei.com": ["business", "learning"],
     "nikkei.com": ["business"],
     "forbesjapan.com": ["business"],
+    "lifehacker.jp": ["productivity", "business"],
     "billboard-japan.com": ["music"],
     "weld-music.com": ["music", "blog"],
     "youtube.com": ["video"],
@@ -87,6 +88,7 @@ function cleanTitle(value) {
     .replace(/\s[-|｜–—‐-]\s*NIKKEIリスキリング.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*日経リスキリング.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*WELD MUSIC.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*ライフハッカー・ジャパン.*$/i, "")
     .trim();
 }
 
