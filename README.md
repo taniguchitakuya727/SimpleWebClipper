@@ -92,6 +92,7 @@ Webアプリの`リスト更新`から直近のクリップを読み込み、タ
 YouTubeはoEmbedからタイトルを取得し、`video`タグを自動付与します。
 WELD MUSICの記事はWordPress APIまたは本文の`entry-title`から記事タイトルを取得します。
 Lifehacker Japanは日本語記事タイトルを優先し、`productivity,business`タグを自動付与します。
+WIRED Japanはサイト名サフィックスを除去し、`technology,culture`タグを自動付与します。
 
 現在のデフォルトURL:
 

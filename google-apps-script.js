@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-19-weld-category-title";
+const SCRIPT_VERSION = "2026-08-19-wired-title";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -184,6 +184,7 @@ function inferTags(url) {
     "nikkei.com": ["business"],
     "forbesjapan.com": ["business"],
     "lifehacker.jp": ["productivity", "business"],
+    "wired.jp": ["technology", "culture"],
     "billboard-japan.com": ["music"],
     "weld-music.com": ["music", "blog"],
     "youtube.com": ["video"],
@@ -361,6 +362,7 @@ function cleanTitle(value) {
     .replace(/\s[-|｜–—‐-]\s*日経リスキリング.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*WELD MUSIC.*$/i, "")
     .replace(/\s[-|｜–—‐-]\s*ライフハッカー・ジャパン.*$/i, "")
+    .replace(/\s[-|｜–—‐-]\s*WIRED\.jp.*$/i, "")
     .trim();
 }
 
