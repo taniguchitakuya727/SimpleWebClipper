@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-06-title-guard";
+const SCRIPT_VERSION = "2026-08-19-weld-category-title";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -267,7 +267,7 @@ function isYoutubeUrl(url) {
 }
 
 function fetchWeldMetadata(url) {
-  const match = String(url).match(/^https?:\/\/(?:www\.)?weld-music\.com\/blog\/(\d+)/i);
+  const match = String(url).match(/^https?:\/\/(?:www\.)?weld-music\.com\/[^/?#]+\/(\d+)/i);
   if (!match) return {};
 
   try {

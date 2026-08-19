@@ -145,7 +145,7 @@ function isGoodTitle(value) {
 }
 
 async function fetchWeldTitle(url) {
-  const match = url.match(/^https?:\/\/(?:www\.)?weld-music\.com\/blog\/(\d+)/i);
+  const match = url.match(/^https?:\/\/(?:www\.)?weld-music\.com\/[^/?#]+\/(\d+)/i);
   if (!match) return "";
   try {
     const response = await fetch(`https://weld-music.com/wp-json/wp/v2/posts/${match[1]}?_fields=title`, {

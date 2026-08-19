@@ -278,7 +278,7 @@ function isYoutubeUrl(url) {
 }
 
 async function fetchWeldMetadata(url) {
-  const match = url.match(/^https?:\/\/(?:www\.)?weld-music\.com\/blog\/(\d+)/i);
+  const match = url.match(/^https?:\/\/(?:www\.)?weld-music\.com\/[^/?#]+\/(\d+)/i);
   if (!match) return {};
 
   try {
