@@ -109,7 +109,7 @@ function looksDerivedTitle(title, url) {
 
 function isBadXTitle(title, url) {
   if (!isXUrl(url)) return false;
-  return /^Xユーザーの.+さん: 「https:\/\/t\.co\/[A-Za-z0-9]+」 \/ X$/.test(title) || /^https:\/\/t\.co\/[A-Za-z0-9]+$/.test(title);
+  return /^Xユーザーの.+https:\/\/t\.co\/[A-Za-z0-9]+.*\/ X$/.test(title) || /^https:\/\/t\.co\/[A-Za-z0-9]+$/.test(title);
 }
 
 async function fetchReaderTitle(url) {
