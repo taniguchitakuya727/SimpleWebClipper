@@ -292,7 +292,7 @@ function fetchXMetadata(url) {
     const body = (text.split("—")[0] || "").trim();
     const articleTitle = fetchXArticleTitle(body);
     return {
-      title: articleTitle || cleanTitle([data.author_name, body].filter(Boolean).join(": ")),
+      title: articleTitle || fetchXFallbackTitle(data.author_name, body),
       published: "",
       description: data.author_url || "",
     };
@@ -325,6 +325,11 @@ function fetchXArticleTitle(text) {
   } catch (error) {
     return "";
   }
+}
+
+function fetchXFallbackTitle(authorName, body) {
+  if (/^https:\/\/t\.co\/[A-Za-z0-9]+$/i.test(body)) return cleanTitle(authorName + ": X Article");
+  return cleanTitle([authorName, body].filter(Boolean).join(": "));
 }
 
 function fetchWeldMetadata(url) {

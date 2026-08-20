@@ -103,7 +103,12 @@ function cleanTitle(value) {
 function looksDerivedTitle(title, url) {
   const derived = deriveTitle(url);
   const host = new URL(url).hostname.replace(/^www\./, "");
-  return !title || title === derived || /^[A-Z0-9_-]{8,}$/i.test(title) || /^\d{5,}$/.test(title) || ["reskill.nikkei.com", "wwdjapan.com", "weld-music.com", "youtube.com", "youtu.be"].includes(host);
+  return !title || title === derived || isBadXTitle(title, url) || /^[A-Z0-9_-]{8,}$/i.test(title) || /^\d{5,}$/.test(title) || ["reskill.nikkei.com", "wwdjapan.com", "weld-music.com", "youtube.com", "youtu.be"].includes(host);
+}
+
+function isBadXTitle(title, url) {
+  if (!isXUrl(url)) return false;
+  return /^Xユーザーの.+さん: 「https:\/\/t\.co\/[A-Za-z0-9]+」 \/ X$/.test(title) || /^https:\/\/t\.co\/[A-Za-z0-9]+$/.test(title);
 }
 
 async function fetchReaderTitle(url) {
@@ -158,7 +163,9 @@ async function fetchXTitle(url) {
     const text = htmlToText(data.html || "");
     const body = text.split("—")[0]?.trim() || "";
     const articleTitle = await fetchXArticleTitle(body);
-    return articleTitle || cleanTitle([data.author_name, body].filter(Boolean).join(": "));
+    if (articleTitle) return articleTitle;
+    if (/^https:\/\/t\.co\/[A-Za-z0-9]+$/i.test(body)) return cleanTitle(`${data.author_name}: X Article`);
+    return cleanTitle([data.author_name, body].filter(Boolean).join(": "));
   } catch {
     return "";
   }
@@ -281,9 +288,9 @@ function buildClipPayload({ url, title, author, content }) {
   };
 }
 
-function applyProvidedTitle(value) {
+function applyProvidedTitle(value, url = "") {
   const title = cleanTitle(value);
-  if (title) elements.title.value = title;
+  if (title && !isBadXTitle(title, url)) elements.title.value = title;
 }
 
 function downloadText(filename, content) {
@@ -512,7 +519,7 @@ async function importUrlFromQuery() {
     elements.url.value = url;
     elements.title.value = "";
     elements.author.value = "";
-    applyProvidedTitle(rawTitle);
+    applyProvidedTitle(rawTitle, url);
     await prepareClipFromUrl({ auto: true });
     window.history.replaceState({}, "", window.location.pathname);
     return true;
