@@ -7,6 +7,7 @@ const root = __dirname;
 loadEnvFile();
 const clipperPassword = process.env.CLIPPER_PASSWORD || "";
 const xArticleTitleOverrides = {
+  "2046592455903219940": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2046537548819054592": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2055590945123704833": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
 };
@@ -292,6 +293,14 @@ function isYoutubeUrl(url) {
 
 async function fetchXMetadata(url) {
   if (!isXUrl(url)) return {};
+  const directTitle = getXTitleOverride(url);
+  if (directTitle) {
+    return {
+      title: directTitle,
+      published: "",
+      description: "",
+    };
+  }
 
   try {
     const api = await fetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`, {
@@ -321,6 +330,11 @@ function isXUrl(url) {
   } catch {
     return false;
   }
+}
+
+function getXTitleOverride(url) {
+  const id = url.match(/\/(?:status|article)\/(\d+)/)?.[1] || url.match(/\/i\/article\/(\d+)/)?.[1];
+  return cleanTitle(xArticleTitleOverrides[id] || "");
 }
 
 async function fetchXArticleTitle(text) {

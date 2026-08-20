@@ -21,6 +21,7 @@ const sheetUrlStorageKey = "simple-web-clipper.sheet-url";
 const defaultSheetsEndpoint = "https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec";
 const defaultSheetUrl = "https://docs.google.com/spreadsheets/d/1LgYhNoS5fJ8GjvSPTbpScQ05P0QKMBwJLsdPtklobUA/edit?gid=1315881697#gid=1315881697";
 const xArticleTitleOverrides = {
+  "2046592455903219940": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2046537548819054592": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2055590945123704833": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
 };
@@ -156,6 +157,9 @@ function isYoutubeUrl(url) {
 
 async function fetchXTitle(url) {
   if (!isXUrl(url)) return "";
+  const directTitle = getXTitleOverride(url);
+  if (directTitle) return directTitle;
+
   try {
     const response = await fetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`, {
       cache: "no-store",
@@ -170,6 +174,11 @@ async function fetchXTitle(url) {
   } catch {
     return "";
   }
+}
+
+function getXTitleOverride(url) {
+  const id = String(url).match(/\/(?:status|article)\/(\d+)/)?.[1] || String(url).match(/\/i\/article\/(\d+)/)?.[1];
+  return cleanTitle(xArticleTitleOverrides[id] || "");
 }
 
 async function fetchXArticleTitle(text) {

@@ -2,6 +2,7 @@ const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
 const SCRIPT_VERSION = "2026-08-20-x-article-title";
 const X_ARTICLE_TITLE_OVERRIDES = {
+  "2046592455903219940": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2046537548819054592": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2055590945123704833": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
 };
@@ -278,6 +279,14 @@ function isYoutubeUrl(url) {
 
 function fetchXMetadata(url) {
   if (!isXUrl(url)) return {};
+  const directTitle = getXTitleOverride(url);
+  if (directTitle) {
+    return {
+      title: directTitle,
+      published: "",
+      description: "",
+    };
+  }
 
   try {
     const response = UrlFetchApp.fetch("https://publish.twitter.com/oembed?url=" + encodeURIComponent(url), {
@@ -305,6 +314,11 @@ function fetchXMetadata(url) {
 function isXUrl(url) {
   const site = getSite(url);
   return site === "x.com" || site === "twitter.com";
+}
+
+function getXTitleOverride(url) {
+  const match = String(url || "").match(/\/(?:status|article)\/(\d+)/) || String(url || "").match(/\/i\/article\/(\d+)/);
+  return match ? cleanTitle(X_ARTICLE_TITLE_OVERRIDES[match[1]] || "") : "";
 }
 
 function fetchXArticleTitle(text) {
