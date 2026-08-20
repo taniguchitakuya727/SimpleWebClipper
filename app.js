@@ -41,11 +41,14 @@ function normalizeUrl(value) {
     "igshid",
     "mc_cid",
     "mc_eid",
+    "ref_src",
     "si",
     "spm",
   ];
   for (const key of [...parsed.searchParams.keys()]) {
-    if (/^utm_/i.test(key) || removableParams.includes(key.toLowerCase())) parsed.searchParams.delete(key);
+    const normalizedKey = key.toLowerCase();
+    const isSocialNoise = ["x.com", "twitter.com"].includes(parsed.hostname.replace(/^www\./, "")) && ["s", "t"].includes(normalizedKey);
+    if (/^utm_/i.test(key) || removableParams.includes(normalizedKey) || isSocialNoise) parsed.searchParams.delete(key);
   }
   parsed.hash = "";
   if (parsed.pathname !== "/") parsed.pathname = parsed.pathname.replace(/\/+$/, "");
@@ -105,6 +108,9 @@ async function fetchReaderTitle(url) {
     const youtubeTitle = await fetchYoutubeTitle(url);
     if (youtubeTitle) return youtubeTitle;
 
+    const xTitle = await fetchXTitle(url);
+    if (xTitle) return xTitle;
+
     const weldTitle = await fetchWeldTitle(url);
     if (weldTitle) return weldTitle;
 
@@ -137,6 +143,32 @@ async function fetchYoutubeTitle(url) {
 function isYoutubeUrl(url) {
   const site = getSite(url);
   return site === "youtube.com" || site === "youtu.be";
+}
+
+async function fetchXTitle(url) {
+  if (!isXUrl(url)) return "";
+  try {
+    const response = await fetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`, {
+      cache: "no-store",
+    });
+    const data = await response.json();
+    const text = htmlToText(data.html || "");
+    const body = text.split("—")[0]?.trim() || "";
+    return cleanTitle([data.author_name, body].filter(Boolean).join(": "));
+  } catch {
+    return "";
+  }
+}
+
+function isXUrl(url) {
+  const site = getSite(url);
+  return site === "x.com" || site === "twitter.com";
+}
+
+function htmlToText(html) {
+  const node = document.createElement("div");
+  node.innerHTML = html;
+  return node.textContent.replace(/\s+/g, " ").trim();
 }
 
 function isGoodTitle(value) {

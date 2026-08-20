@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-19-wired-title";
+const SCRIPT_VERSION = "2026-08-20-x-oembed";
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -148,17 +148,19 @@ function findRowBySource(sheet, source, headerMap) {
 
 function normalizeUrl(value) {
   if (!value) return "";
-  const removableParams = ["fbclid", "gclid", "igshid", "mc_cid", "mc_eid", "si", "spm"];
+  const removableParams = ["fbclid", "gclid", "igshid", "mc_cid", "mc_eid", "ref_src", "si", "spm"];
   const withoutHash = String(value).replace(/#.*$/, "");
   const parts = withoutHash.split("?");
   const base = parts[0].replace(/([^:])\/+$/, "$1");
+  const site = getSite(base);
   if (!parts[1]) return base;
 
   const params = parts[1]
     .split("&")
     .filter(function (pair) {
       const key = safeDecodeURIComponent(pair.split("=")[0] || "").toLowerCase();
-      return key && !/^utm_/i.test(key) && removableParams.indexOf(key) < 0;
+      const isSocialNoise = (site === "x.com" || site === "twitter.com") && (key === "s" || key === "t");
+      return key && !/^utm_/i.test(key) && removableParams.indexOf(key) < 0 && !isSocialNoise;
     });
   return params.length ? base + "?" + params.join("&") : base;
 }
@@ -210,6 +212,9 @@ function fetchMetadata(url) {
   try {
     const youtubeMetadata = fetchYoutubeMetadata(url);
     if (youtubeMetadata.title) return youtubeMetadata;
+
+    const xMetadata = fetchXMetadata(url);
+    if (xMetadata.title) return xMetadata;
 
     const weldMetadata = fetchWeldMetadata(url);
     if (weldMetadata.title) return weldMetadata;
@@ -265,6 +270,36 @@ function fetchYoutubeMetadata(url) {
 function isYoutubeUrl(url) {
   const site = getSite(url);
   return site === "youtube.com" || site === "youtu.be";
+}
+
+function fetchXMetadata(url) {
+  if (!isXUrl(url)) return {};
+
+  try {
+    const response = UrlFetchApp.fetch("https://publish.twitter.com/oembed?url=" + encodeURIComponent(url), {
+      followRedirects: true,
+      muteHttpExceptions: true,
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        Accept: "application/json",
+      },
+    });
+    const data = JSON.parse(response.getContentText());
+    const text = cleanHtml(data.html || "");
+    const body = (text.split("—")[0] || "").trim();
+    return {
+      title: cleanTitle([data.author_name, body].filter(Boolean).join(": ")),
+      published: "",
+      description: data.author_url || "",
+    };
+  } catch (error) {
+    return {};
+  }
+}
+
+function isXUrl(url) {
+  const site = getSite(url);
+  return site === "x.com" || site === "twitter.com";
 }
 
 function fetchWeldMetadata(url) {

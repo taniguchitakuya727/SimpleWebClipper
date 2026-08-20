@@ -221,6 +221,12 @@ async function handleMetadata(request, response) {
       return;
     }
 
+    const xMetadata = await fetchXMetadata(parsed.toString());
+    if (xMetadata.title) {
+      send(response, 200, JSON.stringify(xMetadata), "application/json; charset=utf-8", { "cache-control": "no-store" });
+      return;
+    }
+
     const weldMetadata = await fetchWeldMetadata(parsed.toString());
     if (weldMetadata.title) {
       send(response, 200, JSON.stringify(weldMetadata), "application/json; charset=utf-8", { "cache-control": "no-store" });
@@ -273,6 +279,38 @@ function isYoutubeUrl(url) {
   try {
     const host = new URL(url).hostname.replace(/^www\./, "");
     return host === "youtube.com" || host === "youtu.be";
+  } catch {
+    return false;
+  }
+}
+
+async function fetchXMetadata(url) {
+  if (!isXUrl(url)) return {};
+
+  try {
+    const api = await fetch(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`, {
+      headers: {
+        "user-agent": "Mozilla/5.0",
+        accept: "application/json",
+      },
+    });
+    const data = await api.json();
+    const text = decodeHtml(stripTags(data.html || "").replace(/\s+/g, " ").trim());
+    const body = (text.split("—")[0] || "").trim();
+    return {
+      title: cleanTitle([data.author_name, body].filter(Boolean).join(": ")),
+      published: "",
+      description: data.author_url || "",
+    };
+  } catch {
+    return {};
+  }
+}
+
+function isXUrl(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return host === "x.com" || host === "twitter.com";
   } catch {
     return false;
   }
