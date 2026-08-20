@@ -21,6 +21,7 @@ const sheetUrlStorageKey = "simple-web-clipper.sheet-url";
 const defaultSheetsEndpoint = "https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec";
 const defaultSheetUrl = "https://docs.google.com/spreadsheets/d/1LgYhNoS5fJ8GjvSPTbpScQ05P0QKMBwJLsdPtklobUA/edit?gid=1315881697#gid=1315881697";
 const xArticleTitleOverrides = {
+  "2046537548819054592": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2055590945123704833": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
 };
 elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || defaultSheetsEndpoint;
