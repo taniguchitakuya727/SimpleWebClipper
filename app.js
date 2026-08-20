@@ -20,6 +20,9 @@ const sheetsEndpointStorageKey = "simple-web-clipper.sheets-endpoint";
 const sheetUrlStorageKey = "simple-web-clipper.sheet-url";
 const defaultSheetsEndpoint = "https://script.google.com/macros/s/AKfycbxb1kqPApIKDi-9xf0XDsrGWbbBu9fFEkrVTTk6ov_xbxIAaJGZy6l6sl81XUBXdrXR/exec";
 const defaultSheetUrl = "https://docs.google.com/spreadsheets/d/1LgYhNoS5fJ8GjvSPTbpScQ05P0QKMBwJLsdPtklobUA/edit?gid=1315881697#gid=1315881697";
+const xArticleTitleOverrides = {
+  "2055590945123704833": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
+};
 elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || defaultSheetsEndpoint;
 elements.sheetUrl.value = localStorage.getItem(sheetUrlStorageKey) || defaultSheetUrl;
 let lastSentUrl = "";
@@ -154,7 +157,24 @@ async function fetchXTitle(url) {
     const data = await response.json();
     const text = htmlToText(data.html || "");
     const body = text.split("—")[0]?.trim() || "";
-    return cleanTitle([data.author_name, body].filter(Boolean).join(": "));
+    const articleTitle = await fetchXArticleTitle(body);
+    return articleTitle || cleanTitle([data.author_name, body].filter(Boolean).join(": "));
+  } catch {
+    return "";
+  }
+}
+
+async function fetchXArticleTitle(text) {
+  const tcoUrl = text.match(/https:\/\/t\.co\/[A-Za-z0-9]+/i)?.[0];
+  if (!tcoUrl) return "";
+
+  try {
+    const response = await fetch(tcoUrl, {
+      cache: "no-store",
+      redirect: "follow",
+    });
+    const articleId = response.url.match(/\/i\/article\/(\d+)/)?.[1];
+    return cleanTitle(xArticleTitleOverrides[articleId] || "");
   } catch {
     return "";
   }

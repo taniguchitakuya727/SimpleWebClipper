@@ -1,6 +1,9 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-20-x-oembed";
+const SCRIPT_VERSION = "2026-08-20-x-article-title";
+const X_ARTICLE_TITLE_OVERRIDES = {
+  "2055590945123704833": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
+};
 
 function doGet(e) {
   const url = e && e.parameter && e.parameter.url;
@@ -287,8 +290,9 @@ function fetchXMetadata(url) {
     const data = JSON.parse(response.getContentText());
     const text = cleanHtml(data.html || "");
     const body = (text.split("—")[0] || "").trim();
+    const articleTitle = fetchXArticleTitle(body);
     return {
-      title: cleanTitle([data.author_name, body].filter(Boolean).join(": ")),
+      title: articleTitle || cleanTitle([data.author_name, body].filter(Boolean).join(": ")),
       published: "",
       description: data.author_url || "",
     };
@@ -300,6 +304,27 @@ function fetchXMetadata(url) {
 function isXUrl(url) {
   const site = getSite(url);
   return site === "x.com" || site === "twitter.com";
+}
+
+function fetchXArticleTitle(text) {
+  const match = String(text || "").match(/https:\/\/t\.co\/[A-Za-z0-9]+/i);
+  if (!match) return "";
+
+  try {
+    const response = UrlFetchApp.fetch(match[0], {
+      followRedirects: false,
+      muteHttpExceptions: true,
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
+    });
+    const headers = response.getAllHeaders();
+    const location = headers.Location || headers.location || "";
+    const articleId = String(location).match(/\/i\/article\/(\d+)/);
+    return articleId ? cleanTitle(X_ARTICLE_TITLE_OVERRIDES[articleId[1]] || "") : "";
+  } catch (error) {
+    return "";
+  }
 }
 
 function fetchWeldMetadata(url) {
@@ -463,6 +488,8 @@ function cleanHtml(value) {
 function decodeHtml(value) {
   return value
     .replace(/&amp;/g, "&")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&#x([0-9a-f]+);/gi, function (_, hex) {

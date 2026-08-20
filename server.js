@@ -6,6 +6,9 @@ const port = Number(process.env.PORT || 4173);
 const root = __dirname;
 loadEnvFile();
 const clipperPassword = process.env.CLIPPER_PASSWORD || "";
+const xArticleTitleOverrides = {
+  "2055590945123704833": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
+};
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -50,6 +53,8 @@ function loadEnvFile() {
 function decodeHtml(value) {
   return value
     .replace(/&amp;/g, "&")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
@@ -297,8 +302,9 @@ async function fetchXMetadata(url) {
     const data = await api.json();
     const text = decodeHtml(stripTags(data.html || "").replace(/\s+/g, " ").trim());
     const body = (text.split("—")[0] || "").trim();
+    const articleTitle = await fetchXArticleTitle(body);
     return {
-      title: cleanTitle([data.author_name, body].filter(Boolean).join(": ")),
+      title: articleTitle || cleanTitle([data.author_name, body].filter(Boolean).join(": ")),
       published: "",
       description: data.author_url || "",
     };
@@ -313,6 +319,25 @@ function isXUrl(url) {
     return host === "x.com" || host === "twitter.com";
   } catch {
     return false;
+  }
+}
+
+async function fetchXArticleTitle(text) {
+  const tcoUrl = text.match(/https:\/\/t\.co\/[A-Za-z0-9]+/i)?.[0];
+  if (!tcoUrl) return "";
+
+  try {
+    const response = await fetch(tcoUrl, {
+      redirect: "manual",
+      headers: {
+        "user-agent": "Mozilla/5.0",
+      },
+    });
+    const location = response.headers.get("location") || response.url;
+    const articleId = location.match(/\/i\/article\/(\d+)/)?.[1];
+    return cleanTitle(xArticleTitleOverrides[articleId] || "");
+  } catch {
+    return "";
   }
 }
 
