@@ -385,7 +385,7 @@ async function createMarkdown({ auto = false } = {}) {
 async function prepareClipFromUrl({ auto = false } = {}) {
   const clip = await getClipFromForm(auto);
   if (!clip) return;
-  if (clip.url === lastSentUrl) {
+  if (!auto && clip.url === lastSentUrl) {
     setStatus("このURLは送信済みです。");
     return;
   }
