@@ -577,7 +577,7 @@ async function importClipboardOnStartup() {
     elements.url.value = url;
     elements.title.value = "";
     elements.author.value = "";
-    await prepareClipFromUrl({ auto: true, preserveTitle: Boolean(rawTitle) });
+    await prepareClipFromUrl({ auto: true });
   } catch {
     setStatus("クリップボード自動読込はブロックされました。URL欄に貼り付けてください。");
   }
@@ -588,6 +588,7 @@ async function importUrlFromQuery() {
   const pathValue = decodeURIComponent(window.location.pathname.slice(1));
   const rawUrl = params.get("url") || (pathValue.startsWith("http") ? pathValue : "");
   const rawTitle = params.get("title") || "";
+  const reviewOnly = params.get("review") === "1";
   if (!rawUrl) return false;
 
   try {
@@ -596,7 +597,8 @@ async function importUrlFromQuery() {
     elements.title.value = "";
     elements.author.value = "";
     applyProvidedTitle(rawTitle, url);
-    await prepareClipFromUrl({ auto: true });
+    if (!reviewOnly) await prepareClipFromUrl({ auto: true, preserveTitle: Boolean(rawTitle) });
+    else setStatus("タイトルを確認してからSheetsへ送信してください。");
     window.history.replaceState({}, "", window.location.pathname);
     return true;
   } catch {
