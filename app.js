@@ -105,7 +105,11 @@ function cleanTitle(value) {
 function looksDerivedTitle(title, url) {
   const derived = deriveTitle(url);
   const host = new URL(url).hostname.replace(/^www\./, "");
-  return !title || title === derived || isBadXTitle(title, url) || /^[A-Z0-9_-]{8,}$/i.test(title) || /^\d{5,}$/.test(title) || ["reskill.nikkei.com", "wwdjapan.com", "weld-music.com", "youtube.com", "youtu.be"].includes(host);
+  return !title || title === derived || shouldPreferMetadataTitle(host) || isBadXTitle(title, url) || /^[A-Z0-9_-]{8,}$/i.test(title) || /^\d{5,}$/.test(title);
+}
+
+function shouldPreferMetadataTitle(host) {
+  return ["lifehacker.jp", "reskill.nikkei.com", "wwdjapan.com", "weld-music.com", "wired.jp", "youtube.com", "youtu.be", "x.com", "twitter.com"].includes(host);
 }
 
 function isBadXTitle(title, url) {
