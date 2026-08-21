@@ -115,6 +115,9 @@ function isBadXTitle(title, url) {
 
 async function fetchReaderTitle(url) {
   try {
+    const sheetsTitle = await fetchSheetsMetadataTitle(url);
+    if (sheetsTitle) return sheetsTitle;
+
     const youtubeTitle = await fetchYoutubeTitle(url);
     if (youtubeTitle) return youtubeTitle;
 
@@ -131,6 +134,19 @@ async function fetchReaderTitle(url) {
     const text = await response.text();
     const match = text.match(/^Title:\s*(.+)$/m);
     const title = cleanTitle(match?.[1] || "");
+    return isGoodTitle(title) ? title : "";
+  } catch {
+    return "";
+  }
+}
+
+async function fetchSheetsMetadataTitle(url) {
+  const endpoint = elements.sheetsEndpoint.value.trim();
+  if (!endpoint) return "";
+
+  try {
+    const data = await jsonp(`${endpoint}?url=${encodeURIComponent(url)}`);
+    const title = cleanTitle(data?.metadata?.title || "");
     return isGoodTitle(title) ? title : "";
   } catch {
     return "";
