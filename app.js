@@ -373,7 +373,7 @@ async function fillDerivedFields(url, { preserveTitle = false } = {}) {
 }
 
 async function createMarkdown({ auto = false } = {}) {
-  const clip = await getClipFromForm(auto);
+  const clip = await getClipFromForm(auto, { preserveTitle: true });
   if (!clip) return;
   const { url, title, author, content } = clip;
 
@@ -415,7 +415,7 @@ async function getClipFromForm(auto = false, { preserveTitle = false } = {}) {
 }
 
 async function sendToSheets() {
-  const clip = await getClipFromForm();
+  const clip = await getClipFromForm(false, { preserveTitle: true });
   if (!clip) return;
   await sendClipToSheets(clip);
 }
