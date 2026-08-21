@@ -9,6 +9,7 @@ const elements = {
   download: document.querySelector("#downloadButton"),
   sendSheets: document.querySelector("#sendSheetsButton"),
   loadList: document.querySelector("#loadListButton"),
+  refreshTitles: document.querySelector("#refreshTitlesButton"),
   openSheet: document.querySelector("#openSheetButton"),
   search: document.querySelector("#searchInput"),
   statusFilter: document.querySelector("#statusFilter"),
@@ -504,6 +505,27 @@ async function loadClipList() {
   }
 }
 
+async function refreshAllTitles() {
+  if (!clips.length) await loadClipList();
+  if (!clips.length) return;
+  let updated = 0;
+  for (const [index, clip] of clips.entries()) {
+    setStatus(`タイトルを更新しています... ${index + 1}/${clips.length}`);
+    const title = await fetchReaderTitle(clip.source || clip.canonical_source);
+    if (!title || title === clip.title) continue;
+    await sendClipToSheets({
+      url: clip.source || clip.canonical_source,
+      title,
+      author: clip.author || "",
+      content: clip.content || "",
+    });
+    clip.title = title;
+    updated += 1;
+  }
+  renderClipList();
+  setStatus(`${updated}件のタイトルを更新しました。`);
+}
+
 function renderClipList() {
   const query = elements.search.value.trim().toLowerCase();
   const status = elements.statusFilter.value;
@@ -597,6 +619,7 @@ elements.download.addEventListener("click", () => createMarkdown());
 elements.pasteHelp.addEventListener("click", focusUrlInput);
 elements.sendSheets.addEventListener("click", sendToSheets);
 elements.loadList.addEventListener("click", loadClipList);
+elements.refreshTitles.addEventListener("click", refreshAllTitles);
 elements.openSheet.addEventListener("click", openSheet);
 elements.search.addEventListener("input", renderClipList);
 elements.statusFilter.addEventListener("change", renderClipList);
