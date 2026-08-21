@@ -1,6 +1,6 @@
 const SHEET_NAME = "clips";
 const HEADERS = ["timestamp", "title", "source", "site", "status", "author", "published", "created", "description", "tags", "content", "canonical_source"];
-const SCRIPT_VERSION = "2026-08-20-x-article-title";
+const SCRIPT_VERSION = "2026-08-21-reader-url-fix";
 const X_ARTICLE_TITLE_OVERRIDES = {
   "2046592455903219940": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2046537548819054592": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",

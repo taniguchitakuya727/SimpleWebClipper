@@ -131,10 +131,14 @@ async function fetchReaderTitle(url) {
     const weldTitle = await fetchWeldTitle(url);
     if (weldTitle) return weldTitle;
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 7000);
     const response = await fetch(buildReaderUrl(url), {
       headers: { accept: "text/plain" },
       cache: "no-store",
+      signal: controller.signal,
     });
+    window.clearTimeout(timeoutId);
     const text = await response.text();
     const match = text.match(/^Title:\s*(.+)$/m);
     const title = cleanTitle(match?.[1] || "");
@@ -449,6 +453,10 @@ function jsonp(url) {
   return new Promise((resolve, reject) => {
     const callback = `simpleWebClipperCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const script = document.createElement("script");
+    const timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("jsonp timeout"));
+    }, 5000);
     const separator = url.includes("?") ? "&" : "?";
     script.src = `${url}${separator}callback=${callback}`;
     script.onerror = () => {
@@ -460,6 +468,7 @@ function jsonp(url) {
       resolve(data);
     };
     function cleanup() {
+      window.clearTimeout(timeoutId);
       delete window[callback];
       script.remove();
     }
