@@ -407,7 +407,7 @@ async function fetchWwdMetadata(url) {
 
 async function fetchReaderMetadata(url) {
   try {
-    const reader = await fetch(`https://r.jina.ai/http://r.jina.ai/http://${url}`, {
+    const reader = await fetch(buildReaderUrl(url), {
       headers: {
         "user-agent": "Mozilla/5.0",
         accept: "text/plain",
@@ -423,6 +423,11 @@ async function fetchReaderMetadata(url) {
   } catch {
     return { title: "", published: "", description: "" };
   }
+}
+
+function buildReaderUrl(url) {
+  const parsed = new URL(url);
+  return `https://r.jina.ai/http://r.jina.ai/http://${parsed.host}${parsed.pathname}${parsed.search}`;
 }
 
 function readJson(request) {

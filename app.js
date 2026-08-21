@@ -131,7 +131,7 @@ async function fetchReaderTitle(url) {
     const weldTitle = await fetchWeldTitle(url);
     if (weldTitle) return weldTitle;
 
-    const response = await fetch(`https://r.jina.ai/http://r.jina.ai/http://${url}`, {
+    const response = await fetch(buildReaderUrl(url), {
       headers: { accept: "text/plain" },
       cache: "no-store",
     });
@@ -142,6 +142,11 @@ async function fetchReaderTitle(url) {
   } catch {
     return "";
   }
+}
+
+function buildReaderUrl(url) {
+  const parsed = new URL(url);
+  return `https://r.jina.ai/http://r.jina.ai/http://${parsed.host}${parsed.pathname}${parsed.search}`;
 }
 
 async function fetchSheetsMetadataTitle(url) {

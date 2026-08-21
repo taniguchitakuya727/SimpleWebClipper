@@ -397,7 +397,7 @@ function fetchWwdMetadata(url) {
 
 function fetchReaderMetadata(url) {
   try {
-    const response = UrlFetchApp.fetch("https://r.jina.ai/http://r.jina.ai/http://" + url, {
+    const response = UrlFetchApp.fetch(buildReaderUrl(url), {
       followRedirects: true,
       muteHttpExceptions: true,
       headers: {
@@ -415,6 +415,11 @@ function fetchReaderMetadata(url) {
   } catch (error) {
     return {};
   }
+}
+
+function buildReaderUrl(url) {
+  const match = String(url || "").match(/^https?:\/\/([^#]+)/i);
+  return "https://r.jina.ai/http://r.jina.ai/http://" + (match ? match[1] : String(url || "").replace(/^\/+/, ""));
 }
 
 function pickTitle(html) {
