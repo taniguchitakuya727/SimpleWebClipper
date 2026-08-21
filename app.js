@@ -353,7 +353,7 @@ function downloadText(filename, content) {
   URL.revokeObjectURL(objectUrl);
 }
 
-async function fillDerivedFields(url) {
+async function fillDerivedFields(url, { preserveTitle = false } = {}) {
   if (!elements.title.value.trim()) {
     const title = deriveTitle(url);
     elements.title.value = title;
@@ -361,7 +361,7 @@ async function fillDerivedFields(url) {
   } else {
     elements.title.value = cleanTitle(elements.title.value);
   }
-  if (looksDerivedTitle(elements.title.value.trim(), url)) {
+  if (!preserveTitle && looksDerivedTitle(elements.title.value.trim(), url)) {
     setStatus("タイトルを取得しています...");
     const title = await fetchReaderTitle(url);
     if (title) {
@@ -383,8 +383,8 @@ async function createMarkdown({ auto = false } = {}) {
   setStatus("Markdownを作成しました。");
 }
 
-async function prepareClipFromUrl({ auto = false } = {}) {
-  const clip = await getClipFromForm(auto);
+async function prepareClipFromUrl({ auto = false, preserveTitle = false } = {}) {
+  const clip = await getClipFromForm(auto, { preserveTitle });
   if (!clip) return;
   if (!auto && clip.url === lastSentUrl) {
     setStatus("このURLは送信済みです。");
@@ -394,7 +394,7 @@ async function prepareClipFromUrl({ auto = false } = {}) {
   await sendClipToSheets(clip);
 }
 
-async function getClipFromForm(auto = false) {
+async function getClipFromForm(auto = false, { preserveTitle = false } = {}) {
   let url;
   try {
     url = normalizeUrl(elements.url.value);
@@ -404,7 +404,7 @@ async function getClipFromForm(auto = false) {
   }
 
   elements.url.value = url;
-  await fillDerivedFields(url);
+  await fillDerivedFields(url, { preserveTitle });
 
   return {
     url,
@@ -577,7 +577,7 @@ async function importClipboardOnStartup() {
     elements.url.value = url;
     elements.title.value = "";
     elements.author.value = "";
-    await prepareClipFromUrl({ auto: true });
+    await prepareClipFromUrl({ auto: true, preserveTitle: Boolean(rawTitle) });
   } catch {
     setStatus("クリップボード自動読込はブロックされました。URL欄に貼り付けてください。");
   }
