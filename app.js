@@ -25,6 +25,9 @@ const xArticleTitleOverrides = {
   "2046537548819054592": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
   "2055590945123704833": "Claude × Obsidian × Codex 最強の共通セカンドブレイン完全構築ガイド",
 };
+const knownTitleOverrides = {
+  "www.lifehacker.jp/article/2608-i-turned-off-3-ipad-settings-and-my-8-year-old-ipad-pro-finally-stopped-lagging": "8年前のiPad Proがサクサク！最新OSアップデート後の重さを解消した「3つの設定」",
+};
 elements.sheetsEndpoint.value = localStorage.getItem(sheetsEndpointStorageKey) || defaultSheetsEndpoint;
 elements.sheetUrl.value = localStorage.getItem(sheetUrlStorageKey) || defaultSheetUrl;
 let lastSentUrl = "";
@@ -90,6 +93,11 @@ function deriveTitle(url) {
   return decodeURIComponent(lastPath).replace(/[-_]+/g, " ");
 }
 
+function getKnownTitle(url) {
+  const parsed = new URL(url);
+  return cleanTitle(knownTitleOverrides[`${parsed.hostname}${parsed.pathname}`] || "");
+}
+
 function cleanTitle(value) {
   return String(value || "")
     .replace(/\s[-|｜–—‐-]\s*WWDJAPAN.*$/i, "")
@@ -119,6 +127,8 @@ function isBadXTitle(title, url) {
 
 async function fetchReaderTitle(url) {
   try {
+    const knownTitle = getKnownTitle(url);
+    if (knownTitle) return knownTitle;
     const sheetsTitle = await fetchSheetsMetadataTitle(url);
     if (sheetsTitle) return sheetsTitle;
 
